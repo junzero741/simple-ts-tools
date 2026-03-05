@@ -1,6 +1,7 @@
 /**
  * 전화번호를 하이픈 포맷으로 변환한다.
  * @example formatPhoneNumber("01012345678") // "010-1234-5678"
+ * @complexity Time: O(n) | Space: O(n) — n은 입력 문자열 길이 (최대 11)
  */
 export function formatPhoneNumber(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 11);

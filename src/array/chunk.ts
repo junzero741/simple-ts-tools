@@ -1,6 +1,7 @@
 /**
  * 배열을 n개씩 나눈다.
  * @example chunk([1, 2, 3, 4, 5], 2) // [[1, 2], [3, 4], [5]]
+ * @complexity Time: O(n) | Space: O(n)
  */
 export function chunk<T>(arr: T[], size: number): T[][] {
   if (size < 1) throw new Error("size must be at least 1");
