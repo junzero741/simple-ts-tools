@@ -1,1 +1,2 @@
-export { formatPhoneNumber } from "./phone";
+export * from "./phone";
+export * from "./array";

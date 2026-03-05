@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatPhoneNumber } from "./phone";
+import { formatPhoneNumber } from "./formatPhoneNumber";
 
 describe("formatPhoneNumber", () => {
   it("11자리 휴대폰 번호", () => {
