@@ -16,6 +16,7 @@ pnpm add simple-ts-tools
 |------|----------|------|
 | `chunk` | `chunk<T>(arr: T[], size: number): T[][]` | 배열을 n개씩 나눈다 |
 | `groupBy` | `groupBy<T, K>(arr: T[], keyFn: (item: T) => K): Partial<Record<K, T[]>>` | 키 추출 함수 기준으로 그룹핑 |
+| `sortBy` | `sortBy<T>(arr: T[], keyFn: (item: T) => string \| number, order?: 'asc'\|'desc'): T[]` | 키 기준 정렬 (stable, 비파괴) |
 | `tuple` | `tuple<T extends unknown[]>(...args: T): T` | 인자들을 튜플 타입으로 추론 |
 | `unique` | `unique<T>(arr: T[], keyFn?: (item: T) => unknown): T[]` | 중복 제거 (첫 등장 순서 유지) |
 
@@ -39,6 +40,10 @@ unique(["React", "react", "Vue"], t => t.toLowerCase());
 
 unique(users, u => u.id);
 // id 기준 첫 등장 객체만 유지
+
+sortBy(users, u => u.name);            // 이름 오름차순
+sortBy(users, u => u.name, "desc");    // 이름 내림차순
+sortBy(items, i => -i.price);          // 가격 내림차순 (부호 반전)
 ```
 
 ---
