@@ -74,6 +74,7 @@ await retry(() => callApi(), {
 | 함수 | 시그니처 | 설명 |
 |------|----------|------|
 | `debounce` | `debounce<T>(fn: T, wait: number): T & { cancel() }` | 마지막 호출 후 wait ms 뒤에 실행 (trailing-edge) |
+| `memoize` | `memoize<TArgs, TReturn>(fn, keyFn?): fn & { cache: Map; clear() }` | 인자 기준으로 결과 캐싱 |
 | `throttle` | `throttle<T>(fn: T, interval: number): T & { cancel() }` | interval ms 내 최대 한 번 실행 (leading-edge + trailing) |
 
 ```ts
@@ -88,6 +89,18 @@ search.cancel(); // 예약 취소
 const onScroll = throttle(() => updatePosition(), 100);
 window.addEventListener("scroll", onScroll);
 onScroll.cancel(); // 쿨다운 초기화
+
+// 비용이 큰 계산 캐싱
+const fib = memoize((n: number): number => n <= 1 ? n : fib(n - 1) + fib(n - 2));
+fib(40); // 계산 실행
+fib(40); // 캐시에서 즉시 반환
+fib.clear(); // 캐시 초기화
+
+// 커스텀 키 함수로 객체 인자 처리
+const getUser = memoize(
+  (user: { id: number }) => fetchUser(user.id),
+  (user) => String(user.id)  // 참조가 달라도 id가 같으면 캐시 히트
+);
 ```
 
 ---
