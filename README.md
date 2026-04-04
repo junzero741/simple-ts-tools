@@ -259,8 +259,10 @@ const data = await new RequestBuilder()
 
 | 함수 | 시그니처 | 설명 |
 |------|----------|------|
-| `range` | `range(start: number, end: number, step?: number): number[]` | [start, end) 범위의 숫자 배열 생성 |
 | `clamp` | `clamp(value: number, min: number, max: number): number` | 값을 [min, max] 범위로 제한 |
+| `randomInt` | `randomInt(min: number, max: number): number` | [min, max] 범위의 정수 난수 (양 끝 포함) |
+| `range` | `range(start: number, end: number, step?: number): number[]` | [start, end) 범위의 숫자 배열 생성 |
+| `round` | `round(value: number, decimals?: number): number` | 소수 자릿수 반올림 (부동소수점 오차 보정) |
 
 ```ts
 import { range, clamp } from "simple-ts-tools";
