@@ -17,6 +17,7 @@ pnpm add simple-ts-tools
 | `chunk` | `chunk<T>(arr: T[], size: number): T[][]` | 배열을 n개씩 나눈다 |
 | `groupBy` | `groupBy<T, K>(arr: T[], keyFn: (item: T) => K): Partial<Record<K, T[]>>` | 키 추출 함수 기준으로 그룹핑 |
 | `tuple` | `tuple<T extends unknown[]>(...args: T): T` | 인자들을 튜플 타입으로 추론 |
+| `unique` | `unique<T>(arr: T[], keyFn?: (item: T) => unknown): T[]` | 중복 제거 (첫 등장 순서 유지) |
 
 ```ts
 import { chunk, groupBy, tuple } from "simple-ts-tools";
@@ -29,6 +30,15 @@ groupBy([1, 2, 3, 4], x => x % 2 === 0 ? "even" : "odd");
 
 tuple(1, "hello", true);
 // [number, string, boolean] — 튜플로 추론됨
+
+unique([1, 2, 2, 3, 1]);
+// [1, 2, 3]
+
+unique(["React", "react", "Vue"], t => t.toLowerCase());
+// ["React", "Vue"] — 대소문자 무시
+
+unique(users, u => u.id);
+// id 기준 첫 등장 객체만 유지
 ```
 
 ---
