@@ -256,6 +256,48 @@ omit(user, ["password", "token"]);   // { id: 1, name: "Alice" }
 
 ---
 
+### result
+
+타입 안전한 에러 처리 패턴. 함수가 `throw` 대신 `Result`를 반환하면 호출자가 에러 케이스를 **반드시** 처리해야 한다 (컴파일러가 강제).
+
+| API | 설명 |
+|-----|------|
+| `ok<T>(value)` | `Ok<T>` 생성 |
+| `err<E>(error)` | `Err<E>` 생성 |
+| `tryCatch(fn)` | 동기 함수 실행 → `Result<T, unknown>` |
+| `tryCatchAsync(fn)` | 비동기 함수 실행 → `Promise<Result<T, unknown>>` |
+| `mapResult(result, fn)` | Ok이면 값 변환, Err이면 그대로 전파 |
+| `unwrapOr(result, fallback)` | Ok면 value, Err면 fallback 반환 |
+
+```ts
+import { ok, err, tryCatch, tryCatchAsync, mapResult, unwrapOr } from "simple-ts-tools";
+
+// 반환 타입으로 에러 가능성을 명시
+function divide(a: number, b: number): Result<number, string> {
+  if (b === 0) return err("division by zero");
+  return ok(a / b);
+}
+
+const result = divide(10, 2);
+if (result.ok) {
+  console.log(result.value); // 5 — 타입: number
+} else {
+  console.error(result.error); // 타입: string
+}
+
+// JSON.parse 같은 throw 가능 함수를 안전하게 감싸기
+const parsed = tryCatch(() => JSON.parse(rawInput));
+const value = unwrapOr(parsed, {});
+
+// 비동기 API 호출
+const data = await tryCatchAsync(() =>
+  new RequestBuilder().url("/api/users").method("GET").send<User[]>()
+);
+const users = mapResult(data, us => us.filter(u => u.active));
+```
+
+---
+
 ### phone
 
 | 함수 | 시그니처 | 설명 |
