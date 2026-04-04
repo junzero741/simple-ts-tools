@@ -33,6 +33,29 @@ tuple(1, "hello", true);
 
 ---
 
+### function
+
+| 함수 | 시그니처 | 설명 |
+|------|----------|------|
+| `debounce` | `debounce<T>(fn: T, wait: number): T & { cancel() }` | 마지막 호출 후 wait ms 뒤에 실행 (trailing-edge) |
+| `throttle` | `throttle<T>(fn: T, interval: number): T & { cancel() }` | interval ms 내 최대 한 번 실행 (leading-edge + trailing) |
+
+```ts
+import { debounce, throttle } from "simple-ts-tools";
+
+// 검색창 — 입력 멈춘 300ms 후 API 호출
+const search = debounce((q: string) => fetchResults(q), 300);
+input.addEventListener("input", e => search(e.currentTarget.value));
+search.cancel(); // 예약 취소
+
+// 스크롤 핸들러 — 100ms마다 최대 한 번
+const onScroll = throttle(() => updatePosition(), 100);
+window.addEventListener("scroll", onScroll);
+onScroll.cancel(); // 쿨다운 초기화
+```
+
+---
+
 ### http
 
 | 클래스 | 설명 |
