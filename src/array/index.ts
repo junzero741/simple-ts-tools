@@ -1,5 +1,6 @@
 export { chunk } from "./chunk";
 export { compact } from "./compact";
+export { countBy } from "./countBy";
 export { keyBy } from "./keyBy";
 export { difference } from "./difference";
 export { flatten } from "./flatten";

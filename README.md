@@ -16,6 +16,7 @@ pnpm add simple-ts-tools
 |------|----------|------|
 | `chunk` | `chunk<T>(arr: T[], size: number): T[][]` | 배열을 n개씩 나눈다 |
 | `compact` | `compact<T>(arr: (T \| null \| undefined \| false \| 0 \| "")[]): T[]` | falsy 값 제거 (타입에서도 제외) |
+| `countBy` | `countBy<T, K>(arr: T[], keyFn: (item: T) => K): Partial<Record<K, number>>` | 키 기준으로 등장 횟수 집계 |
 | `difference` | `difference<T>(a: T[], b: T[], keyFn?): T[]` | a에만 있는 요소 반환 (차집합) |
 | `keyBy` | `keyBy<T, K>(arr: T[], keyFn: (item: T) => K): Record<K, T>` | 배열을 키 함수 기준 Record로 변환 (O(1) 조회용) |
 | `flatten` | `flatten<T>(arr: T[], depth?: number): FlatArray<T[], number>[]` | 중첩 배열 펼치기 (기본: 1단계) |
@@ -91,6 +92,16 @@ userMap[2]; // { id: 2, name: "Bob" }
 
 // API 응답 배열을 id 기준으로 색인화할 때 자주 사용
 const postMap = keyBy(posts, p => p.slug); // O(n) 한 번, 이후 O(1) 조회
+
+// 등장 횟수 집계 — groupBy의 카운트 버전
+countBy(["a", "b", "a", "c", "b", "a"], x => x);
+// { a: 3, b: 2, c: 1 }
+
+countBy(users, u => u.role);
+// { admin: 2, viewer: 5, editor: 1 }
+
+countBy([1, 2, 3, 4, 5, 6], n => n % 2 === 0 ? "even" : "odd");
+// { odd: 3, even: 3 }
 ```
 
 ---
@@ -325,6 +336,7 @@ clamp(inputValue, min, max);
 |------|----------|------|
 | `deepClone` | `deepClone<T>(value: T): T` | 재귀적 깊은 복사 (Date/Map/Set/RegExp 포함) |
 | `deepEqual` | `deepEqual(a: unknown, b: unknown): boolean` | 재귀적 깊은 동등 비교 |
+| `deepMerge` | `deepMerge<T, S>(target: T, source: S): T & S` | 두 plain 객체를 재귀적으로 병합 (배열은 source로 덮어씀) |
 | `mapKeys` | `mapKeys<V>(obj: Record<string, V>, keyFn: (key: string) => string): Record<string, V>` | 모든 키에 변환 함수 적용 |
 | `mapValues` | `mapValues<T, U>(obj: T, valueFn: (value, key) => U): Record<string, U>` | 모든 값에 변환 함수 적용 |
 | `omit` | `omit<T, K extends keyof T>(obj: T, keys: readonly K[]): Omit<T, K>` | 지정한 키를 제외한 새 객체 반환 |
@@ -370,6 +382,16 @@ deepEqual({ a: [1, 2] }, { a: [1, 2] });                          // true
 deepEqual(new Date("2024-01-01"), new Date("2024-01-01"));         // true
 deepEqual(new Map([["k", 1]]), new Map([["k", 1]]));               // true
 deepEqual([], {});                                                  // false
+
+// 재귀적 병합 — plain 객체끼리만 재귀, 배열·Date 등은 source로 덮어씀
+const defaults = { host: "localhost", port: 3000, db: { name: "dev", pool: 5 } };
+const userConfig = { port: 8080, db: { name: "prod" } };
+deepMerge(defaults, userConfig);
+// { host: "localhost", port: 8080, db: { name: "prod", pool: 5 } }
+
+// 중첩 상태 부분 업데이트
+deepMerge(state, { ui: { theme: "dark" } });
+// state의 다른 ui 필드는 유지, theme만 변경
 ```
 
 ---
@@ -433,11 +455,12 @@ formatPhoneNumber("0212345678");  // "02-123-4567" (8자리 지역번호 형식)
 
 | 함수 | 시그니처 | 설명 |
 |------|----------|------|
-| `isEmpty` | `isEmpty(value: string \| null \| undefined): boolean` | 빈 문자열·공백·null·undefined이면 true |
-| `truncate` | `truncate(str: string, maxLength: number, suffix?: string): string` | maxLength 초과 시 suffix(기본 "…")를 붙여 잘라냄 |
 | `camelToKebab` | `camelToKebab(str: string): string` | camelCase/PascalCase → kebab-case (약어 처리 포함) |
 | `capitalize` | `capitalize(str: string): string` | 첫 글자 대문자, 나머지 소문자 |
+| `formatBytes` | `formatBytes(bytes: number, decimals?: number): string` | 바이트 수를 사람이 읽기 좋은 단위로 변환 (B/KB/MB/GB/TB) |
+| `isEmpty` | `isEmpty(value: string \| null \| undefined): boolean` | 빈 문자열·공백·null·undefined이면 true |
 | `kebabToCamel` | `kebabToCamel(str: string): string` | kebab-case → camelCase |
+| `truncate` | `truncate(str: string, maxLength: number, suffix?: string): string` | maxLength 초과 시 suffix(기본 "…")를 붙여 잘라냄 |
 
 ```ts
 import { isEmpty, truncate, capitalize } from "simple-ts-tools";
@@ -461,6 +484,17 @@ camelToKebab("XMLParser");           // "xml-parser"     ← 약어 처리
 camelToKebab("getHTTPSResponse");    // "get-https-response"
 kebabToCamel("background-color");    // "backgroundColor"
 kebabToCamel(camelToKebab("myProp")); // "myProp" (왕복 가능)
+
+// 파일 크기를 사람이 읽기 좋은 단위로 표시
+formatBytes(0);               // "0 B"
+formatBytes(1024);            // "1 KB"
+formatBytes(1536);            // "1.5 KB"
+formatBytes(1048576);         // "1 MB"
+formatBytes(1234567, 1);      // "1.2 MB"
+formatBytes(1024 ** 3);       // "1 GB"
+
+// 업로드 UI, 파일 탐색기에서 자주 사용
+`파일 크기: ${formatBytes(file.size)}` // "파일 크기: 2.34 MB"
 ```
 
 ---
