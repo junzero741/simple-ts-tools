@@ -318,6 +318,33 @@ formatPhoneNumber("0212345678");  // "02-123-4567" (8자리 지역번호 형식)
 
 ---
 
+### string
+
+| 함수 | 시그니처 | 설명 |
+|------|----------|------|
+| `isEmpty` | `isEmpty(value: string \| null \| undefined): boolean` | 빈 문자열·공백·null·undefined이면 true |
+| `truncate` | `truncate(str: string, maxLength: number, suffix?: string): string` | maxLength 초과 시 suffix(기본 "…")를 붙여 잘라냄 |
+| `capitalize` | `capitalize(str: string): string` | 첫 글자 대문자, 나머지 소문자 |
+
+```ts
+import { isEmpty, truncate, capitalize } from "simple-ts-tools";
+
+// 폼 유효성 검사
+isEmpty("");          // true
+isEmpty("   ");       // true
+isEmpty(null);        // true
+isEmpty("hello");     // false
+
+// 카드/리스트 제목 표시
+truncate("긴 제목이 넘칩니다", 8);          // "긴 제목이 넘…"
+truncate("Hello, World!", 8, "...");        // "Hello..."
+
+// 표시용 문자열 정규화
+capitalize("hELLO wORLD");  // "Hello world"
+```
+
+---
+
 ### tree
 
 | 함수 | 시그니처 | 설명 |

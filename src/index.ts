@@ -8,4 +8,5 @@ export * from "./number";
 export * from "./object";
 export * from "./phone";
 export * from "./result";
+export * from "./string";
 export * from "./tree";
