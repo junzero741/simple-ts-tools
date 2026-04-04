@@ -33,6 +33,42 @@ tuple(1, "hello", true);
 
 ---
 
+### async
+
+| 함수 | 시그니처 | 설명 |
+|------|----------|------|
+| `sleep` | `sleep(ms: number): Promise<void>` | 지정한 시간(ms)만큼 대기 |
+| `retry` | `retry<T>(fn: () => Promise<T>, options?: RetryOptions): Promise<T>` | 실패 시 지수 백오프로 재시도 |
+
+**RetryOptions**
+
+| 옵션 | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `attempts` | `number` | `3` | 최대 시도 횟수 |
+| `delay` | `number` | `200` | 첫 재시도 대기 시간 (ms) |
+| `backoff` | `number` | `2` | 재시도마다 delay에 곱할 배수 |
+| `when` | `(error: unknown) => boolean` | — | 재시도 조건 함수 |
+
+```ts
+import { sleep, retry } from "simple-ts-tools";
+
+// 300ms 대기
+await sleep(300);
+
+// 네트워크 요청 재시도 (200ms → 400ms → 800ms)
+const data = await retry(
+  () => fetch("/api/data").then(r => r.json()),
+  { attempts: 3, delay: 200 }
+);
+
+// 5xx 에러만 재시도, 4xx는 즉시 throw
+await retry(() => callApi(), {
+  when: (e) => (e as Response).status >= 500,
+});
+```
+
+---
+
 ### function
 
 | 함수 | 시그니처 | 설명 |
