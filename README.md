@@ -85,6 +85,7 @@ await retry(() => callApi(), {
 |------|----------|------|
 | `debounce` | `debounce<T>(fn: T, wait: number): T & { cancel() }` | 마지막 호출 후 wait ms 뒤에 실행 (trailing-edge) |
 | `memoize` | `memoize<TArgs, TReturn>(fn, keyFn?): fn & { cache: Map; clear() }` | 인자 기준으로 결과 캐싱 |
+| `pipe` | `pipe(value, ...fns): T` | 값을 함수들에 왼쪽→오른쪽으로 순서대로 통과 (최대 8단계 타입 안전) |
 | `throttle` | `throttle<T>(fn: T, interval: number): T & { cancel() }` | interval ms 내 최대 한 번 실행 (leading-edge + trailing) |
 
 ```ts
@@ -105,6 +106,14 @@ const fib = memoize((n: number): number => n <= 1 ? n : fib(n - 1) + fib(n - 2))
 fib(40); // 계산 실행
 fib(40); // 캐시에서 즉시 반환
 fib.clear(); // 캐시 초기화
+
+// 데이터 변환 파이프라인
+const result = pipe(
+  rawUsers,
+  users => unique(users, u => u.id),           // 중복 제거
+  users => users.filter(u => u.active),         // 필터
+  users => groupBy(users, u => u.role),         // 역할별 그룹핑
+);
 
 // 커스텀 키 함수로 객체 인자 처리
 const getUser = memoize(
