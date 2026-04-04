@@ -238,6 +238,7 @@ clamp(inputValue, min, max);
 
 | 함수 | 시그니처 | 설명 |
 |------|----------|------|
+| `deepEqual` | `deepEqual(a: unknown, b: unknown): boolean` | 재귀적 깊은 동등 비교 |
 | `pick` | `pick<T, K extends keyof T>(obj: T, keys: readonly K[]): Pick<T, K>` | 지정한 키만 추출한 새 객체 반환 |
 | `omit` | `omit<T, K extends keyof T>(obj: T, keys: readonly K[]): Omit<T, K>` | 지정한 키를 제외한 새 객체 반환 |
 
@@ -252,6 +253,12 @@ pick(user, ["id", "name"]);          // { id: 1, name: "Alice" }
 
 // 민감 필드 제거 후 클라이언트 전달
 omit(user, ["password", "token"]);   // { id: 1, name: "Alice" }
+
+// 깊은 동등 비교 — ===으로 안 되는 타입들
+deepEqual({ a: [1, 2] }, { a: [1, 2] });                          // true
+deepEqual(new Date("2024-01-01"), new Date("2024-01-01"));         // true
+deepEqual(new Map([["k", 1]]), new Map([["k", 1]]));               // true
+deepEqual([], {});                                                  // false
 ```
 
 ---
