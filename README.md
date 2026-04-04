@@ -15,18 +15,42 @@ pnpm add simple-ts-tools
 | 함수 | 시그니처 | 설명 |
 |------|----------|------|
 | `chunk` | `chunk<T>(arr: T[], size: number): T[][]` | 배열을 n개씩 나눈다 |
+| `compact` | `compact<T>(arr: (T \| null \| undefined \| false \| 0 \| "")[]): T[]` | falsy 값 제거 (타입에서도 제외) |
 | `difference` | `difference<T>(a: T[], b: T[], keyFn?): T[]` | a에만 있는 요소 반환 (차집합) |
+| `flatten` | `flatten<T>(arr: T[], depth?: number): FlatArray<T[], number>[]` | 중첩 배열 펼치기 (기본: 1단계) |
 | `groupBy` | `groupBy<T, K>(arr: T[], keyFn: (item: T) => K): Partial<Record<K, T[]>>` | 키 추출 함수 기준으로 그룹핑 |
 | `intersection` | `intersection<T>(a: T[], b: T[], keyFn?): T[]` | 양쪽 모두에 있는 요소 반환 (교집합) |
 | `sortBy` | `sortBy<T>(arr: T[], keyFn: (item: T) => string \| number, order?: 'asc'\|'desc'): T[]` | 키 기준 정렬 (stable, 비파괴) |
 | `tuple` | `tuple<T extends unknown[]>(...args: T): T` | 인자들을 튜플 타입으로 추론 |
 | `unique` | `unique<T>(arr: T[], keyFn?: (item: T) => unknown): T[]` | 중복 제거 (첫 등장 순서 유지) |
+| `zip` | `zip<T extends unknown[][]>(...arrays: T): [...][]` | 여러 배열을 인덱스 기준으로 묶음 (최단 길이 기준) |
 
 ```ts
-import { chunk, groupBy, tuple } from "simple-ts-tools";
+import { chunk, compact, flatten, groupBy, tuple, zip } from "simple-ts-tools";
 
 chunk([1, 2, 3, 4, 5], 2);
 // [[1, 2], [3, 4], [5]]
+
+// falsy 값 제거 — 반환 타입에서 null/undefined/false/0/"" 자동 제외
+compact([0, 1, false, 2, "", 3, null, undefined]);
+// [1, 2, 3]   (타입: number[])
+
+const ids: (string | null)[] = ["a", null, "b", undefined, "c"];
+const validIds: string[] = compact(ids);  // null/undefined 제거, 타입 보장
+
+// 중첩 배열 펼치기
+flatten([1, [2, [3, [4]]]]);           // [1, 2, [3, [4]]] — depth=1
+flatten([1, [2, [3, [4]]]], 2);        // [1, 2, 3, [4]]
+flatten([1, [2, [3]]], Infinity);      // [1, 2, 3] — 완전히 펼치기
+
+// 여러 배열을 인덱스 기준으로 묶기 — 가장 짧은 배열 길이에 맞춤
+zip([1, 2, 3], ["a", "b", "c"]);      // [[1,"a"], [2,"b"], [3,"c"]]
+zip([1, 2], ["a", "b", "c"], [true]); // [[1,"a",true]] — 길이 1
+
+// API 응답의 keys/values를 합칠 때
+const keys = ["id", "name", "age"];
+const values = [1, "Alice", 30];
+Object.fromEntries(zip(keys, values)); // { id: 1, name: "Alice", age: 30 }
 
 groupBy([1, 2, 3, 4], x => x % 2 === 0 ? "even" : "odd");
 // { odd: [1, 3], even: [2, 4] }
@@ -424,16 +448,34 @@ kebabToCamel(camelToKebab("myProp")); // "myProp" (왕복 가능)
 
 | 함수 | 시그니처 | 설명 |
 |------|----------|------|
+| `bfs` | `bfs<T>(root: TreeNode<T>): T[]` | 트리를 BFS(레벨 순서)로 탐색하여 값 배열 반환 |
 | `dfs` | `dfs<T>(node: TreeNode<T>): T[]` | 트리를 DFS 후위 순회하여 값 배열 반환 |
 
 ```ts
-import { dfs } from "simple-ts-tools";
+import { bfs, dfs } from "simple-ts-tools";
 
-dfs({ value: 1, children: [
-  { value: 2, children: [] },
+//      1
+//    /   \
+//   2     3
+//  / \
+// 4   5
+
+const tree = { value: 1, children: [
+  { value: 2, children: [
+    { value: 4, children: [] },
+    { value: 5, children: [] },
+  ]},
   { value: 3, children: [] },
-]});
-// [2, 3, 1]
+]};
+
+// BFS — 레벨 순서 (너비 우선)
+bfs(tree);  // [1, 2, 3, 4, 5]
+
+// DFS — 후위 순회 (깊이 우선)
+dfs(tree);  // [4, 5, 2, 3, 1]
+
+// 활용: 최단 경로 탐색, 레벨별 처리에는 bfs
+// 활용: 하위 노드부터 처리해야 할 때 (예: 트리 삭제, 크기 계산)는 dfs
 ```
 
 ---

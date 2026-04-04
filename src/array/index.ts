@@ -1,7 +1,10 @@
 export { chunk } from "./chunk";
+export { compact } from "./compact";
 export { difference } from "./difference";
+export { flatten } from "./flatten";
 export { groupBy } from "./groupBy";
 export { intersection } from "./intersection";
 export { sortBy } from "./sortBy";
 export { tuple } from "./tuple";
 export { unique } from "./unique";
+export { zip } from "./zip";
