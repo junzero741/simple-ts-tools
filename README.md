@@ -91,6 +91,28 @@ const data = await new RequestBuilder()
 
 ---
 
+### object
+
+| 함수 | 시그니처 | 설명 |
+|------|----------|------|
+| `pick` | `pick<T, K extends keyof T>(obj: T, keys: readonly K[]): Pick<T, K>` | 지정한 키만 추출한 새 객체 반환 |
+| `omit` | `omit<T, K extends keyof T>(obj: T, keys: readonly K[]): Omit<T, K>` | 지정한 키를 제외한 새 객체 반환 |
+
+반환 타입이 `Pick<T, K>` / `Omit<T, K>`로 정확히 추론되어 이후 코드에서 추가 타입 단언 불필요.
+
+```ts
+import { pick, omit } from "simple-ts-tools";
+
+// API 응답에서 필요한 필드만 추출
+const user = { id: 1, name: "Alice", password: "secret", token: "xyz" };
+pick(user, ["id", "name"]);          // { id: 1, name: "Alice" }
+
+// 민감 필드 제거 후 클라이언트 전달
+omit(user, ["password", "token"]);   // { id: 1, name: "Alice" }
+```
+
+---
+
 ### phone
 
 | 함수 | 시그니처 | 설명 |
