@@ -17,6 +17,7 @@ pnpm add simple-ts-tools
 | `chunk` | `chunk<T>(arr: T[], size: number): T[][]` | 배열을 n개씩 나눈다 |
 | `compact` | `compact<T>(arr: (T \| null \| undefined \| false \| 0 \| "")[]): T[]` | falsy 값 제거 (타입에서도 제외) |
 | `difference` | `difference<T>(a: T[], b: T[], keyFn?): T[]` | a에만 있는 요소 반환 (차집합) |
+| `keyBy` | `keyBy<T, K>(arr: T[], keyFn: (item: T) => K): Record<K, T>` | 배열을 키 함수 기준 Record로 변환 (O(1) 조회용) |
 | `flatten` | `flatten<T>(arr: T[], depth?: number): FlatArray<T[], number>[]` | 중첩 배열 펼치기 (기본: 1단계) |
 | `groupBy` | `groupBy<T, K>(arr: T[], keyFn: (item: T) => K): Partial<Record<K, T[]>>` | 키 추출 함수 기준으로 그룹핑 |
 | `intersection` | `intersection<T>(a: T[], b: T[], keyFn?): T[]` | 양쪽 모두에 있는 요소 반환 (교집합) |
@@ -81,6 +82,15 @@ const removed = difference(prev, next);               // 삭제된 항목
 sortBy(users, u => u.name);            // 이름 오름차순
 sortBy(users, u => u.name, "desc");    // 이름 내림차순
 sortBy(items, i => -i.price);          // 가격 내림차순 (부호 반전)
+
+// 배열 → Record 변환 (O(1) 조회)
+const users = [{ id: 1, name: "Alice" }, { id: 2, name: "Bob" }];
+const userMap = keyBy(users, u => u.id);
+userMap[1]; // { id: 1, name: "Alice" }
+userMap[2]; // { id: 2, name: "Bob" }
+
+// API 응답 배열을 id 기준으로 색인화할 때 자주 사용
+const postMap = keyBy(posts, p => p.slug); // O(n) 한 번, 이후 O(1) 조회
 ```
 
 ---
@@ -317,13 +327,15 @@ clamp(inputValue, min, max);
 | `deepEqual` | `deepEqual(a: unknown, b: unknown): boolean` | 재귀적 깊은 동등 비교 |
 | `mapKeys` | `mapKeys<V>(obj: Record<string, V>, keyFn: (key: string) => string): Record<string, V>` | 모든 키에 변환 함수 적용 |
 | `mapValues` | `mapValues<T, U>(obj: T, valueFn: (value, key) => U): Record<string, U>` | 모든 값에 변환 함수 적용 |
-| `pick` | `pick<T, K extends keyof T>(obj: T, keys: readonly K[]): Pick<T, K>` | 지정한 키만 추출한 새 객체 반환 |
 | `omit` | `omit<T, K extends keyof T>(obj: T, keys: readonly K[]): Omit<T, K>` | 지정한 키를 제외한 새 객체 반환 |
+| `omitBy` | `omitBy<T>(obj: T, predicate: (value, key) => boolean): Partial<T>` | predicate 통과 항목을 제외한 새 객체 반환 |
+| `pick` | `pick<T, K extends keyof T>(obj: T, keys: readonly K[]): Pick<T, K>` | 지정한 키만 추출한 새 객체 반환 |
+| `pickBy` | `pickBy<T>(obj: T, predicate: (value, key) => boolean): Partial<T>` | predicate 통과 항목만 추출한 새 객체 반환 |
 
 반환 타입이 `Pick<T, K>` / `Omit<T, K>`로 정확히 추론되어 이후 코드에서 추가 타입 단언 불필요.
 
 ```ts
-import { pick, omit } from "simple-ts-tools";
+import { pick, omit, pickBy, omitBy } from "simple-ts-tools";
 
 // API 응답에서 필요한 필드만 추출
 const user = { id: 1, name: "Alice", password: "secret", token: "xyz" };
@@ -331,6 +343,15 @@ pick(user, ["id", "name"]);          // { id: 1, name: "Alice" }
 
 // 민감 필드 제거 후 클라이언트 전달
 omit(user, ["password", "token"]);   // { id: 1, name: "Alice" }
+
+// 값 조건으로 필터링 — null/undefined 제거
+const config = { host: "localhost", port: 3000, debug: null, timeout: undefined };
+pickBy(config, v => v != null);      // { host: "localhost", port: 3000 }
+omitBy(config, v => v == null);      // 동일한 결과 (omitBy는 pickBy의 반전)
+
+// 키 조건으로 필터링 — private 필드 제거
+const dto = { _id: "abc", name: "Alice", _version: 2, age: 30 };
+omitBy(dto, (_, k) => String(k).startsWith("_")); // { name: "Alice", age: 30 }
 
 // 깊은 복사 — 불변 상태 업데이트
 const next = deepClone(state);
@@ -476,6 +497,52 @@ dfs(tree);  // [4, 5, 2, 3, 1]
 
 // 활용: 최단 경로 탐색, 레벨별 처리에는 bfs
 // 활용: 하위 노드부터 처리해야 할 때 (예: 트리 삭제, 크기 계산)는 dfs
+```
+
+---
+
+### cache
+
+| 클래스 | 설명 |
+|--------|------|
+| `LRUCache<K, V>` | 용량 제한 캐시. 초과 시 가장 오래 전에 사용된 항목 자동 제거 |
+
+| 메서드 / 프로퍼티 | 설명 |
+|--------|------|
+| `new LRUCache(capacity)` | 최대 저장 항목 수 지정 (양의 정수) |
+| `.get(key)` | 값 반환, 없으면 `undefined`. 조회 시 최근 사용으로 갱신 |
+| `.set(key, value)` | 값 저장. 기존 키면 갱신 후 최근 사용으로 이동. 체이닝 가능 |
+| `.has(key)` | 키 존재 여부 확인 (순서 변경 없음) |
+| `.delete(key)` | 항목 제거, 성공 여부 반환 |
+| `.clear()` | 전체 비우기 |
+| `.size` | 현재 항목 수 |
+
+내부적으로 `Map`의 삽입 순서를 활용해 get/set 모두 **O(1)** 으로 동작한다.
+
+```ts
+import { LRUCache } from "simple-ts-tools";
+
+// API 응답 캐싱 — 최대 100개, 초과 시 오래된 것부터 제거
+const apiCache = new LRUCache<string, Response>(100);
+
+async function fetchUser(id: string) {
+  const cached = apiCache.get(id);
+  if (cached) return cached;
+  const data = await fetch(`/api/users/${id}`).then(r => r.json());
+  apiCache.set(id, data);
+  return data;
+}
+
+// 계산 비용이 큰 함수 결과 캐싱
+const imgCache = new LRUCache<string, HTMLImageElement>(50);
+
+// 연속된 조회에서 LRU 동작 확인
+const cache = new LRUCache<string, number>(2);
+cache.set("a", 1).set("b", 2);
+cache.get("a");       // "a"가 최근 사용으로 갱신
+cache.set("c", 3);    // 용량 초과 → "b"(가장 오래됨)가 제거
+cache.has("b");       // false
+cache.has("a");       // true
 ```
 
 ---

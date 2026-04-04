@@ -3,4 +3,6 @@ export { deepEqual } from "./deepEqual";
 export { mapKeys } from "./mapKeys";
 export { mapValues } from "./mapValues";
 export { omit } from "./omit";
+export { omitBy } from "./omitBy";
 export { pick } from "./pick";
+export { pickBy } from "./pickBy";
