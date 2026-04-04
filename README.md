@@ -258,6 +258,7 @@ clamp(inputValue, min, max);
 
 | 함수 | 시그니처 | 설명 |
 |------|----------|------|
+| `deepClone` | `deepClone<T>(value: T): T` | 재귀적 깊은 복사 (Date/Map/Set/RegExp 포함) |
 | `deepEqual` | `deepEqual(a: unknown, b: unknown): boolean` | 재귀적 깊은 동등 비교 |
 | `mapKeys` | `mapKeys<V>(obj: Record<string, V>, keyFn: (key: string) => string): Record<string, V>` | 모든 키에 변환 함수 적용 |
 | `mapValues` | `mapValues<T, U>(obj: T, valueFn: (value, key) => U): Record<string, U>` | 모든 값에 변환 함수 적용 |
@@ -275,6 +276,10 @@ pick(user, ["id", "name"]);          // { id: 1, name: "Alice" }
 
 // 민감 필드 제거 후 클라이언트 전달
 omit(user, ["password", "token"]);   // { id: 1, name: "Alice" }
+
+// 깊은 복사 — 불변 상태 업데이트
+const next = deepClone(state);
+next.user.scores.push(30); // state.user.scores는 변하지 않음
 
 // 키 일괄 변환 — API snake_case → camelCase
 mapKeys({ background_color: "#fff", font_size: 16 }, kebabToCamel);
