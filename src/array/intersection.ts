@@ -1,0 +1,27 @@
+/**
+ * 두 배열 모두에 존재하는 요소만 반환한다 (교집합).
+ * keyFn을 제공하면 반환값 기준으로 비교한다.
+ * 결과는 첫 번째 배열의 순서를 따르며 중복은 제거된다.
+ *
+ * @example intersection([1, 2, 3], [2, 3, 4])           // [2, 3]
+ * @example intersection(usersA, usersB, u => u.id)       // id가 겹치는 유저
+ * @complexity Time: O(n + m) | Space: O(m) — n, m은 각 배열 길이
+ */
+export function intersection<T>(
+  a: T[],
+  b: T[],
+  keyFn?: (item: T) => unknown
+): T[] {
+  const setB = new Set(keyFn ? b.map(keyFn) : b);
+  const seen = new Set<unknown>();
+  const result: T[] = [];
+
+  for (const item of a) {
+    const key = keyFn ? keyFn(item) : item;
+    if (setB.has(key) && !seen.has(key)) {
+      seen.add(key);
+      result.push(item);
+    }
+  }
+  return result;
+}

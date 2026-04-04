@@ -15,7 +15,9 @@ pnpm add simple-ts-tools
 | 함수 | 시그니처 | 설명 |
 |------|----------|------|
 | `chunk` | `chunk<T>(arr: T[], size: number): T[][]` | 배열을 n개씩 나눈다 |
+| `difference` | `difference<T>(a: T[], b: T[], keyFn?): T[]` | a에만 있는 요소 반환 (차집합) |
 | `groupBy` | `groupBy<T, K>(arr: T[], keyFn: (item: T) => K): Partial<Record<K, T[]>>` | 키 추출 함수 기준으로 그룹핑 |
+| `intersection` | `intersection<T>(a: T[], b: T[], keyFn?): T[]` | 양쪽 모두에 있는 요소 반환 (교집합) |
 | `sortBy` | `sortBy<T>(arr: T[], keyFn: (item: T) => string \| number, order?: 'asc'\|'desc'): T[]` | 키 기준 정렬 (stable, 비파괴) |
 | `tuple` | `tuple<T extends unknown[]>(...args: T): T` | 인자들을 튜플 타입으로 추론 |
 | `unique` | `unique<T>(arr: T[], keyFn?: (item: T) => unknown): T[]` | 중복 제거 (첫 등장 순서 유지) |
@@ -40,6 +42,17 @@ unique(["React", "react", "Vue"], t => t.toLowerCase());
 
 unique(users, u => u.id);
 // id 기준 첫 등장 객체만 유지
+
+// 교집합 — 양쪽에 공통으로 존재하는 요소
+intersection([1, 2, 3], [2, 3, 4]);                   // [2, 3]
+intersection(usersA, usersB, u => u.id);              // 공통 유저
+intersection(userRoles, requiredRoles).length > 0;    // 권한 체크
+
+// 차집합 — 첫 번째에만 있는 요소
+difference([1, 2, 3], [2, 3]);                        // [1]
+difference(prev, next, item => item.id);              // 삭제된 항목
+const added   = difference(next, prev);               // 추가된 항목
+const removed = difference(prev, next);               // 삭제된 항목
 
 sortBy(users, u => u.name);            // 이름 오름차순
 sortBy(users, u => u.name, "desc");    // 이름 내림차순
