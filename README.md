@@ -101,6 +101,7 @@ await retry(() => callApi(), {
 
 | 클래스 | 설명 |
 |--------|------|
+| `BehaviorSubject<T>` | 현재 값을 보유하며 변경 시 구독자에게 알리는 반응형 상태 홀더 |
 | `TypedEventEmitter<TEvents>` | 이벤트 이름과 페이로드 타입이 컴파일 타임에 검증되는 pub/sub |
 
 | 메서드 | 설명 |
@@ -113,6 +114,34 @@ await retry(() => callApi(), {
 | `.listenerCount(event)` | 등록된 핸들러 수 |
 
 모든 메서드는 `this`를 반환하여 체이닝 가능.
+
+**BehaviorSubject** — 현재 값 보유 + 구독자 알림
+
+| 메서드 / 프로퍼티 | 설명 |
+|--------|------|
+| `.getValue()` | 현재 값 동기 반환 |
+| `.set(value)` | 새 값 설정, 동일값이면 무시 |
+| `.update(fn)` | 현재 값 기반 업데이트 |
+| `.subscribe(handler)` | 구독 등록 (즉시 현재 값 전달), 해제 함수 반환 |
+| `.complete()` | 완료 처리, 이후 set/update 무시 |
+| `.subscriberCount` | 현재 구독자 수 |
+
+```ts
+import { BehaviorSubject } from "simple-ts-tools";
+
+// 간단한 카운터 상태
+const count$ = new BehaviorSubject(0);
+const unsub = count$.subscribe(v => console.log(v)); // 즉시 0 출력
+count$.set(1);                  // 1 출력
+count$.update(v => v + 1);     // 2 출력
+unsub();                        // 구독 해제
+
+// 객체 상태 관리
+type State = { user: string | null; loading: boolean };
+const state$ = new BehaviorSubject<State>({ user: null, loading: false });
+state$.update(s => ({ ...s, loading: true }));
+state$.update(s => ({ ...s, user: "Alice", loading: false }));
+```
 
 ```ts
 import { TypedEventEmitter } from "simple-ts-tools";
