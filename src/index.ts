@@ -1,5 +1,6 @@
 export * from "./array";
 export * from "./async";
+export * from "./event";
 export * from "./function";
 export * from "./http";
 export * from "./language";

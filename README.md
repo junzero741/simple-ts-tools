@@ -84,6 +84,48 @@ await retry(() => callApi(), {
 
 ---
 
+### event
+
+| 클래스 | 설명 |
+|--------|------|
+| `TypedEventEmitter<TEvents>` | 이벤트 이름과 페이로드 타입이 컴파일 타임에 검증되는 pub/sub |
+
+| 메서드 | 설명 |
+|--------|------|
+| `.on(event, handler)` | 핸들러 등록 |
+| `.once(event, handler)` | 한 번만 실행되는 핸들러 등록 |
+| `.off(event, handler)` | 핸들러 제거 |
+| `.emit(event, payload)` | 이벤트 발행 |
+| `.clear(event?)` | 특정 이벤트(또는 전체) 핸들러 제거 |
+| `.listenerCount(event)` | 등록된 핸들러 수 |
+
+모든 메서드는 `this`를 반환하여 체이닝 가능.
+
+```ts
+import { TypedEventEmitter } from "simple-ts-tools";
+
+type AppEvents = {
+  userLogin:  { userId: string; timestamp: number };
+  userLogout: { userId: string };
+  error:      Error;
+};
+
+const emitter = new TypedEventEmitter<AppEvents>();
+
+// 이벤트 이름, 페이로드 타입 모두 자동 추론
+emitter.on("userLogin", ({ userId, timestamp }) => {
+  console.log(`${userId} logged in at ${timestamp}`);
+});
+
+emitter.once("error", (err) => console.error(err.message));
+
+emitter
+  .emit("userLogin", { userId: "u1", timestamp: Date.now() })
+  .emit("userLogout", { userId: "u1" });
+```
+
+---
+
 ### function
 
 | 함수 | 시그니처 | 설명 |
