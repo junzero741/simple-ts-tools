@@ -239,6 +239,8 @@ clamp(inputValue, min, max);
 | 함수 | 시그니처 | 설명 |
 |------|----------|------|
 | `deepEqual` | `deepEqual(a: unknown, b: unknown): boolean` | 재귀적 깊은 동등 비교 |
+| `mapKeys` | `mapKeys<V>(obj: Record<string, V>, keyFn: (key: string) => string): Record<string, V>` | 모든 키에 변환 함수 적용 |
+| `mapValues` | `mapValues<T, U>(obj: T, valueFn: (value, key) => U): Record<string, U>` | 모든 값에 변환 함수 적용 |
 | `pick` | `pick<T, K extends keyof T>(obj: T, keys: readonly K[]): Pick<T, K>` | 지정한 키만 추출한 새 객체 반환 |
 | `omit` | `omit<T, K extends keyof T>(obj: T, keys: readonly K[]): Omit<T, K>` | 지정한 키를 제외한 새 객체 반환 |
 
@@ -253,6 +255,14 @@ pick(user, ["id", "name"]);          // { id: 1, name: "Alice" }
 
 // 민감 필드 제거 후 클라이언트 전달
 omit(user, ["password", "token"]);   // { id: 1, name: "Alice" }
+
+// 키 일괄 변환 — API snake_case → camelCase
+mapKeys({ background_color: "#fff", font_size: 16 }, kebabToCamel);
+// { backgroundColor: "#fff", fontSize: 16 }
+
+// 값 일괄 변환
+mapValues({ a: "1", b: "2" }, Number);        // { a: 1, b: 2 }
+mapValues({ a: 1, b: 2 }, (v, k) => `${k}=${v}`); // { a: "a=1", b: "b=2" }
 
 // 깊은 동등 비교 — ===으로 안 되는 타입들
 deepEqual({ a: [1, 2] }, { a: [1, 2] });                          // true
