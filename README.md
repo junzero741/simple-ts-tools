@@ -324,7 +324,9 @@ formatPhoneNumber("0212345678");  // "02-123-4567" (8자리 지역번호 형식)
 |------|----------|------|
 | `isEmpty` | `isEmpty(value: string \| null \| undefined): boolean` | 빈 문자열·공백·null·undefined이면 true |
 | `truncate` | `truncate(str: string, maxLength: number, suffix?: string): string` | maxLength 초과 시 suffix(기본 "…")를 붙여 잘라냄 |
+| `camelToKebab` | `camelToKebab(str: string): string` | camelCase/PascalCase → kebab-case (약어 처리 포함) |
 | `capitalize` | `capitalize(str: string): string` | 첫 글자 대문자, 나머지 소문자 |
+| `kebabToCamel` | `kebabToCamel(str: string): string` | kebab-case → camelCase |
 
 ```ts
 import { isEmpty, truncate, capitalize } from "simple-ts-tools";
@@ -341,6 +343,13 @@ truncate("Hello, World!", 8, "...");        // "Hello..."
 
 // 표시용 문자열 정규화
 capitalize("hELLO wORLD");  // "Hello world"
+
+// CSS 클래스명 / API 필드명 변환
+camelToKebab("backgroundColor");    // "background-color"
+camelToKebab("XMLParser");           // "xml-parser"     ← 약어 처리
+camelToKebab("getHTTPSResponse");    // "get-https-response"
+kebabToCamel("background-color");    // "backgroundColor"
+kebabToCamel(camelToKebab("myProp")); // "myProp" (왕복 가능)
 ```
 
 ---
