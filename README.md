@@ -140,6 +140,34 @@ const data = await new RequestBuilder()
 
 ---
 
+### number
+
+| 함수 | 시그니처 | 설명 |
+|------|----------|------|
+| `range` | `range(start: number, end: number, step?: number): number[]` | [start, end) 범위의 숫자 배열 생성 |
+| `clamp` | `clamp(value: number, min: number, max: number): number` | 값을 [min, max] 범위로 제한 |
+
+```ts
+import { range, clamp } from "simple-ts-tools";
+
+// 페이지네이션 버튼 1~5
+range(1, 6);           // [1, 2, 3, 4, 5]
+
+// 짝수만, 2칸씩
+range(0, 10, 2);       // [0, 2, 4, 6, 8]
+
+// 역방향
+range(5, 0, -1);       // [5, 4, 3, 2, 1]
+
+// 진행률 0~100 제한
+clamp(progress, 0, 100);
+
+// 슬라이더 값 제한
+clamp(inputValue, min, max);
+```
+
+---
+
 ### object
 
 | 함수 | 시그니처 | 설명 |
