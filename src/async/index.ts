@@ -32,3 +32,5 @@ export { createPool } from "./pool";
 export type { Pool, PoolOptions, PoolStats } from "./pool";
 export { createSemaphore } from "./semaphore";
 export type { Semaphore } from "./semaphore";
+export { createDisposable, using } from "./disposable";
+export type { Disposable, CleanupFn } from "./disposable";
