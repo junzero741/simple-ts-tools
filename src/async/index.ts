@@ -52,3 +52,5 @@ export {
   asyncToArray, asyncReduce, asyncFind, asyncSome, asyncEvery,
   fromIterable,
 } from "./asyncIterator";
+export { retryPolicy } from "./retryPolicy";
+export type { RetryPolicy, RetryPolicyBuilder, RetryPolicyConfig } from "./retryPolicy";
