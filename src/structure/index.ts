@@ -10,3 +10,5 @@ export type { Ring } from "./ring";
 export { createUndoStack } from "./undoStack";
 export type { UndoStack, UndoStackOptions } from "./undoStack";
 export { Deque } from "./deque";
+export { createGraph } from "./graph";
+export type { Graph, Edge, GraphOptions } from "./graph";
