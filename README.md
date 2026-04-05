@@ -276,6 +276,7 @@ emitter
 
 | 함수 | 시그니처 | 설명 |
 |------|----------|------|
+| `curry` | `curry(fn): CurriedFn` | 함수를 커리화 — 인자를 하나씩 받아 마지막까지 받으면 실행 (2~4인자 완전 타입 추론) |
 | `debounce` | `debounce<T>(fn: T, wait: number): T & { cancel() }` | 마지막 호출 후 wait ms 뒤에 실행 (trailing-edge) |
 | `memoize` | `memoize<TArgs, TReturn>(fn, keyFn?): fn & { cache: Map; clear() }` | 인자 기준으로 결과 캐싱 |
 | `once` | `once<TArgs, TReturn>(fn): fn & { reset() }` | 최초 한 번만 실행, 이후 호출은 첫 결과 반환 |
@@ -283,7 +284,7 @@ emitter
 | `throttle` | `throttle<T>(fn: T, interval: number): T & { cancel() }` | interval ms 내 최대 한 번 실행 (leading-edge + trailing) |
 
 ```ts
-import { debounce, throttle } from "simple-ts-tools";
+import { curry, debounce, throttle, pipe } from "simple-ts-tools";
 
 // 검색창 — 입력 멈춘 300ms 후 API 호출
 const search = debounce((q: string) => fetchResults(q), 300);
@@ -320,6 +321,26 @@ const getUser = memoize(
   (user: { id: number }) => fetchUser(user.id),
   (user) => String(user.id)  // 참조가 달라도 id가 같으면 캐시 히트
 );
+
+// curry — 부분 적용으로 재사용 가능한 함수 생성
+const add = curry((a: number, b: number) => a + b);
+const add10 = add(10);
+add10(5);   // 15
+add10(20);  // 30
+
+const clampRange = curry(
+  (min: number, max: number, v: number) => Math.min(Math.max(v, min), max)
+);
+const clamp0to100 = clampRange(0)(100);
+clamp0to100(150); // 100
+
+// curry + pipe 조합 — 선언적 데이터 변환
+const multiply = curry((factor: number, n: number) => n * factor) as
+  (factor: number) => (n: number) => number;
+const double = multiply(2);
+const triple = multiply(3);
+
+pipe(5, double, triple); // 30  (5 → 10 → 30)
 ```
 
 ---
@@ -356,6 +377,26 @@ const data = await new RequestBuilder()
 |------|----------|------|
 | `isAlphabet` | `isAlphabet(char: string): boolean` | 단일 문자가 알파벳인지 확인 |
 | `isAlphanumeric` | `isAlphanumeric(str: string): boolean` | 문자열이 영문자·숫자로만 구성됐는지 확인 |
+| `isEmail` | `isEmail(value: string): boolean` | 이메일 형식 검증 |
+| `isUrl` | `isUrl(value: string, allowedProtocols?: string[]): boolean` | URL 형식 검증 (기본: http/https만 허용) |
+
+```ts
+import { isEmail, isUrl } from "simple-ts-tools";
+
+// 폼 검증
+isEmail("user@example.com");      // true
+isEmail("user+tag@co.kr");        // true
+isEmail("user@");                 // false
+isEmail("@example.com");          // false
+
+isUrl("https://example.com");     // true
+isUrl("http://localhost:3000");   // true
+isUrl("ftp://files.example.com"); // false (기본은 http/https만)
+isUrl("ftp://files.example.com", ["ftp:"]); // true
+
+// XSS 방지 — javascript: URL 차단
+isUrl("javascript:alert(1)");     // false
+```
 
 ---
 
@@ -628,6 +669,7 @@ dfs(tree);  // [4, 5, 2, 3, 1]
 | 함수 | 시그니처 | 설명 |
 |------|----------|------|
 | `formatDate` | `formatDate(date: Date, format: string): string` | 토큰 기반 날짜 포맷 변환 |
+| `formatRelativeTime` | `formatRelativeTime(date: Date, base?: Date, locale?: "ko"\|"en"): string` | 상대 시간 표시 ("3분 전", "2일 후") |
 
 **지원 토큰**
 
@@ -664,6 +706,18 @@ formatDate(afternoon, "hh:mm a");        // "02:30 pm"
 
 // 파일명, 로그 타임스탬프
 `log_${formatDate(new Date(), "YYYY-MM-DD")}.txt` // "log_2024-06-07.txt"
+
+// 상대 시간 표시 (SNS 피드, 댓글, 알림)
+const now = new Date();
+formatRelativeTime(new Date(now.getTime() - 30 * 1000));        // "방금 전"
+formatRelativeTime(new Date(now.getTime() - 3 * 60 * 1000));    // "3분 전"
+formatRelativeTime(new Date(now.getTime() - 2 * 3600 * 1000));  // "2시간 전"
+formatRelativeTime(new Date(now.getTime() - 5 * 86400 * 1000)); // "5일 전"
+formatRelativeTime(new Date(now.getTime() + 86400 * 1000));     // "1일 후"
+
+// 영어 지원
+formatRelativeTime(pastDate, now, "en");  // "3 minutes ago"
+formatRelativeTime(futureDate, now, "en"); // "in 2 hours"
 ```
 
 ---
