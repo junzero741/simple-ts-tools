@@ -7,3 +7,5 @@ export { retry } from "./retry";
 export type { RetryOptions } from "./retry";
 export { sleep } from "./sleep";
 export { timeout } from "./timeout";
+export { parallel } from "./parallel";
+export type { AsyncFn } from "./parallel";

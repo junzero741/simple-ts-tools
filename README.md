@@ -215,6 +215,7 @@ const { data, totalPages, hasNext, hasPrev } = paginate(allItems, currentPage, 2
 |------|----------|------|
 | `createDeferred` | `createDeferred<T>(): Deferred<T>` | 외부에서 resolve/reject 가능한 Promise 객체 생성 |
 | `mapAsync` | `mapAsync<T, R>(arr: T[], fn, options?): Promise<R[]>` | 동시성 제한 병렬 처리 (기본: 제한 없음) |
+| `parallel` | `parallel(fns: AsyncFn[], options?): Promise<[...]>` | 서로 다른 N개의 비동기 함수를 동시에 실행, 결과를 튜플로 반환 (최대 8개 타입 추론) |
 | `memoizeAsync` | `memoizeAsync<TArgs, TReturn>(fn, options?): MemoizedFn` | 비동기 함수 캐싱 (TTL·maxSize·thundering herd 방지) |
 | `retry` | `retry<T>(fn: () => Promise<T>, options?: RetryOptions): Promise<T>` | 실패 시 지수 백오프로 재시도 |
 | `sleep` | `sleep(ms: number): Promise<void>` | 지정한 시간(ms)만큼 대기 |
@@ -300,6 +301,39 @@ ready.resolve(); // no-op
 const getUser = memoizeAsync(fetchUser, { ttl: 60_000 });
 await getUser(1); // 네트워크 요청
 await getUser(1); // 60초 내 → 캐시 반환 (fn 재호출 없음)
+
+// parallel — 서로 다른 비동기 함수들을 동시에 실행
+// mapAsync: 배열의 각 항목을 하나의 함수로 처리 (항목 N개, 함수 1개)
+// parallel: 서로 다른 함수들을 동시에 실행   (항목 N개, 함수 N개)
+
+const [user, posts, config] = await parallel([
+  () => fetchUser(id),
+  () => fetchPosts(id),
+  () => fetchAppConfig(),
+]);
+// 각 반환 타입이 정확히 추론됨: user: User, posts: Post[], config: AppConfig
+
+// concurrency 제한 — API rate limit 준수
+const [a, b, c, d] = await parallel(
+  [() => callApi("a"), () => callApi("b"), () => callApi("c"), () => callApi("d")],
+  { concurrency: 2 }  // 2개씩 순차적으로 처리
+);
+
+// 실사용: 페이지 초기 데이터 로딩
+async function loadDashboard(userId: string) {
+  const [profile, stats, notifications] = await parallel([
+    () => api.getProfile(userId),
+    () => api.getStats(userId),
+    () => api.getNotifications(userId),
+  ]);
+  return { profile, stats, notifications };
+}
+
+// 실사용: 외부 서비스 호출 (rate limit 있을 때)
+const enrichedItems = await parallel(
+  items.map(item => () => enrichWithExternalData(item)),
+  { concurrency: 3 }
+);
 
 // maxSize: LRU-like 항목 수 제한
 const getProduct = memoizeAsync(fetchProduct, { ttl: 30_000, maxSize: 100 });
