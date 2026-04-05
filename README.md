@@ -336,6 +336,7 @@ arr.slice(sortedIndex(arr, 3), sortedLastIndex(arr, 3)); // [3, 3, 3]
 | `poll` | `poll<T>(fn, predicate, options?): Promise<T>` | 조건이 충족될 때까지 비동기 함수를 반복 호출 (`retry`는 실패 재시도, `poll`은 정상 응답 검사) |
 | `pLimit` | `pLimit(concurrency): Limiter` | 동시에 실행할 비동기 작업 수를 제한하는 concurrency limiter — `activeCount`/`pendingCount`/`clearQueue()` 제공 |
 | `createRateLimiter` | `createRateLimiter(options): RateLimiter` | 토큰 버킷 기반 시간당 호출 수 제한 — `acquire()`/`tryAcquire()`/`reset()` 제공 |
+| `createCircuitBreaker` | `createCircuitBreaker(fn, options?): CircuitBreaker` | 서킷 브레이커 — 연속 실패 시 OPEN 전환 후 복구 탐색 (CLOSED → OPEN → HALF_OPEN) |
 
 **MemoizeAsyncOptions**
 
@@ -344,6 +345,16 @@ arr.slice(sortedIndex(arr, 3), sortedLastIndex(arr, 3)); // [3, 3, 3]
 | `ttl` | `number` | — | 캐시 만료 시간 (ms). 미지정 시 영구 캐시 |
 | `maxSize` | `number` | — | 최대 캐시 항목 수. 초과 시 FIFO 제거 |
 | `keyFn` | `(...args) => string` | `JSON.stringify` | 캐시 키 생성 함수 |
+
+**CircuitBreakerOptions**
+
+| 옵션 | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `threshold` | `number` | `5` | OPEN으로 전환될 연속 실패 횟수 |
+| `resetTimeout` | `number` | `60_000` | OPEN → HALF_OPEN 전환 대기 시간 (ms) |
+| `successThreshold` | `number` | `1` | HALF_OPEN에서 CLOSED 복귀에 필요한 연속 성공 횟수 |
+| `isFailure` | `(error: unknown) => boolean` | `() => true` | 실패 여부 판단 함수 (특정 에러 제외 가능) |
+| `onStateChange` | `(event: StateChangeEvent) => void` | — | 상태 전이 시 호출되는 콜백 |
 
 **RateLimiterOptions**
 
@@ -557,6 +568,47 @@ console.log(limit.pendingCount); // 대기 중인 작업 수
 
 // 긴급 취소 — 남은 큐 비우기 (실행 중인 작업은 그대로 완료)
 limit.clearQueue();
+```
+
+```ts
+import { createCircuitBreaker, CircuitOpenError } from "simple-ts-tools";
+
+// 외부 API 호출을 서킷 브레이커로 보호
+const breaker = createCircuitBreaker(fetchUser, {
+  threshold: 5,          // 5번 연속 실패 시 OPEN
+  resetTimeout: 10_000,  // 10초 후 HALF_OPEN (복구 탐색)
+  successThreshold: 2,   // 2번 연속 성공 시 CLOSED 복귀
+});
+
+// 정상 호출 — 투명하게 래핑
+const user = await breaker.call("user-123");
+
+// OPEN 상태에서는 즉시 CircuitOpenError (실제 함수 미호출)
+try {
+  const user = await breaker.call("user-456");
+} catch (e) {
+  if (e instanceof CircuitOpenError) {
+    console.log("서킷 오픈 — 나중에 재시도");
+    return cachedFallback(); // 폴백 처리
+  }
+  throw e;
+}
+
+// 특정 에러(404)는 실패로 간주하지 않음
+const breaker2 = createCircuitBreaker(fetchResource, {
+  threshold: 3,
+  isFailure: (e) => !(e instanceof NotFoundError),
+});
+
+// 상태 변화 모니터링
+const breaker3 = createCircuitBreaker(fn, {
+  onStateChange: ({ from, to }) => metrics.record("circuit_state", { from, to }),
+});
+
+// 상태 확인 및 강제 초기화
+console.log(breaker.state);   // "CLOSED" | "OPEN" | "HALF_OPEN"
+console.log(breaker.failures); // 현재 연속 실패 횟수
+breaker.reset();               // 강제로 CLOSED 복귀 (운영 대응)
 ```
 
 ```ts

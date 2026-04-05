@@ -17,3 +17,10 @@ export { pLimit } from "./pLimit";
 export type { Limiter } from "./pLimit";
 export { createRateLimiter } from "./rateLimit";
 export type { RateLimiter, RateLimiterOptions } from "./rateLimit";
+export { createCircuitBreaker, CircuitOpenError } from "./circuitBreaker";
+export type {
+  CircuitBreaker,
+  CircuitBreakerOptions,
+  CircuitState,
+  StateChangeEvent,
+} from "./circuitBreaker";
