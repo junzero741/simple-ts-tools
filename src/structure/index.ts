@@ -23,3 +23,5 @@ export { createObjectPool } from "./objectPool";
 export type { ObjectPool, ObjectPoolOptions } from "./objectPool";
 export { IntervalTree } from "./intervalTree";
 export type { Interval } from "./intervalTree";
+export { defineBitmask } from "./bitmask";
+export type { Bitmask, BitmaskFactory } from "./bitmask";
