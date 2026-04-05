@@ -147,6 +147,7 @@ sampleSize(questions, 5);           // 시험 문제 랜덤 출제
 
 | 함수 | 시그니처 | 설명 |
 |------|----------|------|
+| `createDeferred` | `createDeferred<T>(): Deferred<T>` | 외부에서 resolve/reject 가능한 Promise 객체 생성 |
 | `mapAsync` | `mapAsync<T, R>(arr: T[], fn, options?): Promise<R[]>` | 동시성 제한 병렬 처리 (기본: 제한 없음) |
 | `retry` | `retry<T>(fn: () => Promise<T>, options?: RetryOptions): Promise<T>` | 실패 시 지수 백오프로 재시도 |
 | `sleep` | `sleep(ms: number): Promise<void>` | 지정한 시간(ms)만큼 대기 |
@@ -197,6 +198,28 @@ await timeout(heavyJob(), 5000, "처리 시간 초과");
 
 // retry와 조합 — 타임아웃 걸린 요청도 재시도
 await retry(() => timeout(fetchData(), 2000), { attempts: 3 });
+
+// Deferred — 외부에서 제어 가능한 Promise
+const ready = createDeferred<void>();
+
+// 이벤트 기반 코드를 Promise로 변환
+const loaded = createDeferred<string>();
+image.onload = () => loaded.resolve(image.src);
+image.onerror = (e) => loaded.reject(e);
+const src = await loaded.promise;
+
+// 두 비동기 흐름 사이 핸드셰이크
+const serverReady = createDeferred<void>();
+server.on("listen", () => serverReady.resolve());
+await serverReady.promise;
+// 이제 서버가 준비됨을 보장하고 다음 단계 진행
+
+// 상태 확인
+ready.status; // "pending" | "fulfilled" | "rejected"
+
+// 중복 호출 안전 — resolve/reject 이후 추가 호출은 무시됨
+ready.resolve();
+ready.resolve(); // no-op
 ```
 
 ---
