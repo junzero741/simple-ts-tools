@@ -9,3 +9,4 @@ export { createRing } from "./ring";
 export type { Ring } from "./ring";
 export { createUndoStack } from "./undoStack";
 export type { UndoStack, UndoStackOptions } from "./undoStack";
+export { Deque } from "./deque";
