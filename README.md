@@ -1059,6 +1059,8 @@ formatPhoneNumber("0212345678");  // "02-123-4567" (8자리 지역번호 형식)
 | `wordCount` | `wordCount(str: string): number` | 단어 수 반환 (공백 기준, 연속 공백 정규화) |
 | `words` | `words(str: string): string[]` | 문자열을 단어 배열로 분리 |
 | `truncateWords` | `truncateWords(str: string, maxWords: number, suffix?: string): string` | 단어 수 기준으로 잘라냄 (기본 suffix: "…") |
+| `pluralize` | `pluralize(count, singular, plural?, options?): string` | 영어 복수형 자동 처리 (불규칙형은 plural로 지정) |
+| `autoPlural` | `autoPlural(word: string): string` | 영어 복수형 규칙 적용 (s/es/ies) — pluralize의 내부 규칙 직접 사용 시 |
 
 ```ts
 import { isEmpty, truncate, capitalize } from "simple-ts-tools";
@@ -1176,6 +1178,38 @@ const preview = truncateWords(article.body, 20);
 
 // 실사용: 트위터 스타일 글자 수 제한 표시
 const remaining = 280 - wordCount(input) * 5; // 대략적 계산용
+
+// pluralize — 카운트에 따른 영어 단수/복수형 처리
+pluralize(1, "result")               // "1 result"
+pluralize(2, "result")               // "2 results"
+pluralize(0, "item")                 // "0 items"
+
+// 자동 복수형 규칙
+// +s:   file→files, user→users, error→errors
+// +es:  bus→buses, box→boxes, watch→watches, dish→dishes
+// +ies: city→cities, baby→babies, query→queries (자음+y)
+// +s:   boy→boys, day→days (모음+y — 변형 없음)
+
+// 불규칙형은 plural 인자로 지정
+pluralize(1, "person", "people")     // "1 person"
+pluralize(2, "person", "people")     // "2 people"
+pluralize(2, "child", "children")    // "2 children"
+pluralize(2, "leaf", "leaves")       // "2 leaves"
+
+// showCount: false — 단어만 반환 (템플릿에서 숫자를 직접 관리할 때)
+pluralize(5, "file", undefined, { showCount: false })  // "files"
+
+// 실사용: UI 상태 메시지
+`${pluralize(selectedCount, "item")} selected`
+// "1 item selected" / "3 items selected"
+
+`Found ${pluralize(results.length, "result")}`
+// "Found 1 result" / "Found 42 results"
+
+// 실사용: 알림 뱃지
+const badge = pluralize(unread, "notification", undefined, { showCount: false });
+document.title = unread > 0 ? `(${unread}) ${badge} — MyApp` : "MyApp";
+// "(3) notifications — MyApp" / "(1) notification — MyApp"
 ```
 
 ---
