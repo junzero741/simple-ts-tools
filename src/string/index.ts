@@ -32,3 +32,5 @@ export { naturalCompare, naturalCompareInsensitive, naturalSort, naturalSortBy }
 export { createCuid, createNanoId, createPrefixedId, createSortableId, createHumanCode } from "./cuid";
 export { createTokenizer } from "./tokenizer";
 export type { Tokenizer, Token, TokenRule } from "./tokenizer";
+export { highlight, highlightAll, highlightWords, findMatchRanges } from "./highlight";
+export type { HighlightOptions } from "./highlight";
