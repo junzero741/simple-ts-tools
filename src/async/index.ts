@@ -70,3 +70,5 @@ export { createBulkhead } from "./bulkhead";
 export type { Bulkhead, PartitionConfig, PartitionStats } from "./bulkhead";
 export { createLoadBalancer } from "./loadBalancer";
 export type { LoadBalancer, LoadBalancerOptions, WeightedTarget, Strategy } from "./loadBalancer";
+export { createTaskQueue } from "./taskQueue";
+export type { TaskQueue, TaskQueueOptions, ScheduleOptions } from "./taskQueue";
