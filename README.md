@@ -795,6 +795,7 @@ dfs(tree);  // [4, 5, 2, 3, 1]
 | `diffDays` | `diffDays(a: Date, b: Date): number` | 두 날짜의 일수 차이 (절댓값) |
 | `formatDate` | `formatDate(date: Date, format: string): string` | 토큰 기반 날짜 포맷 변환 |
 | `formatRelativeTime` | `formatRelativeTime(date: Date, base?: Date, locale?: "ko"\|"en"): string` | 상대 시간 표시 ("3분 전", "2일 후") |
+| `parseDate` | `parseDate(input: string, locale?: "en-US"\|"en-GB"): Date \| null` | 다양한 형식의 날짜 문자열 → Date (실패 시 null) |
 
 **지원 토큰**
 
@@ -874,6 +875,21 @@ formatRelativeTime(new Date(now.getTime() + 86400 * 1000));     // "1일 후"
 // 영어 지원
 formatRelativeTime(pastDate, now, "en");  // "3 minutes ago"
 formatRelativeTime(futureDate, now, "en"); // "in 2 hours"
+
+// parseDate — 다양한 포맷 파싱 (성공 시 Date, 실패 시 null)
+parseDate("2024-06-07");           // Date (2024년 6월 7일)
+parseDate("2024/06/07");           // Date
+parseDate("2024.06.07");           // Date
+parseDate("2024년 6월 7일");       // Date (한국어)
+parseDate("2024년6월7일");         // Date (공백 없음도 지원)
+parseDate("06/07/2024");           // Date (en-US: MM/DD/YYYY)
+parseDate("07/06/2024", "en-GB");  // Date (en-GB: DD/MM/YYYY)
+parseDate("2024-02-30");           // null (존재하지 않는 날짜)
+parseDate("not-a-date");           // null
+
+// API 응답의 날짜 문자열을 안전하게 파싱
+const date = parseDate(apiResponse.createdAt);
+if (date) formatRelativeTime(date);
 ```
 
 ---

@@ -11,4 +11,5 @@ export {
   subDays,
 } from "./dateUtils";
 export { formatDate } from "./formatDate";
+export { parseDate } from "./parseDate";
 export { formatRelativeTime } from "./formatRelativeTime";
