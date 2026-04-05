@@ -148,8 +148,9 @@ sampleSize(questions, 5);           // 시험 문제 랜덤 출제
 | 함수 | 시그니처 | 설명 |
 |------|----------|------|
 | `mapAsync` | `mapAsync<T, R>(arr: T[], fn, options?): Promise<R[]>` | 동시성 제한 병렬 처리 (기본: 제한 없음) |
-| `sleep` | `sleep(ms: number): Promise<void>` | 지정한 시간(ms)만큼 대기 |
 | `retry` | `retry<T>(fn: () => Promise<T>, options?: RetryOptions): Promise<T>` | 실패 시 지수 백오프로 재시도 |
+| `sleep` | `sleep(ms: number): Promise<void>` | 지정한 시간(ms)만큼 대기 |
+| `timeout` | `timeout<T>(promise: Promise<T>, ms: number, message?: string): Promise<T>` | 타임아웃 초과 시 reject |
 
 **RetryOptions**
 
@@ -189,6 +190,13 @@ const data = await retry(
 await retry(() => callApi(), {
   when: (e) => (e as Response).status >= 500,
 });
+
+// 타임아웃 — 지정 시간 내 완료 안 되면 reject
+const data = await timeout(fetch("/api/slow"), 3000);
+await timeout(heavyJob(), 5000, "처리 시간 초과");
+
+// retry와 조합 — 타임아웃 걸린 요청도 재시도
+await retry(() => timeout(fetchData(), 2000), { attempts: 3 });
 ```
 
 ---
@@ -388,7 +396,9 @@ clamp(inputValue, min, max);
 | `deepClone` | `deepClone<T>(value: T): T` | 재귀적 깊은 복사 (Date/Map/Set/RegExp 포함) |
 | `deepEqual` | `deepEqual(a: unknown, b: unknown): boolean` | 재귀적 깊은 동등 비교 |
 | `deepMerge` | `deepMerge<T, S>(target: T, source: S): T & S` | 두 plain 객체를 재귀적으로 병합 (배열은 source로 덮어씀) |
+| `fromPairs` | `fromPairs<K, V>(pairs: [K, V][]): Record<K, V>` | [키, 값] 튜플 배열 → 객체 |
 | `invert` | `invert<K, V>(obj: Record<K, V>): Record<string, K>` | 키와 값을 뒤집은 새 객체 반환 |
+| `toPairs` | `toPairs<T>(obj: T): [keyof T, T[keyof T]][]` | 객체 → [키, 값] 튜플 배열 |
 | `mapKeys` | `mapKeys<V>(obj: Record<string, V>, keyFn: (key: string) => string): Record<string, V>` | 모든 키에 변환 함수 적용 |
 | `mapValues` | `mapValues<T, U>(obj: T, valueFn: (value, key) => U): Record<string, U>` | 모든 값에 변환 함수 적용 |
 | `omit` | `omit<T, K extends keyof T>(obj: T, keys: readonly K[]): Omit<T, K>` | 지정한 키를 제외한 새 객체 반환 |
@@ -455,6 +465,21 @@ byCode[404];    // "NOT_FOUND"
 const ErrorCode = { INVALID_INPUT: "E001", NOT_FOUND: "E002" };
 const codeToName = invert(ErrorCode);
 codeToName["E001"]; // "INVALID_INPUT"
+
+// 객체 ↔ [키, 값] 배열 변환 — 변환 파이프라인에서 유용
+const prices = { apple: 300, banana: 150, cherry: 500 };
+
+// 300원 이상만 유지
+const expensive = fromPairs(
+  toPairs(prices).filter(([, price]) => price >= 300) as [string, number][]
+);
+// { apple: 300, cherry: 500 }
+
+// 값에 부가세 적용
+const withTax = fromPairs(
+  toPairs(prices).map(([k, v]) => [k, Math.round(v * 1.1)]) as [string, number][]
+);
+// { apple: 330, banana: 165, cherry: 550 }
 ```
 
 ---
@@ -594,6 +619,51 @@ dfs(tree);  // [4, 5, 2, 3, 1]
 
 // 활용: 최단 경로 탐색, 레벨별 처리에는 bfs
 // 활용: 하위 노드부터 처리해야 할 때 (예: 트리 삭제, 크기 계산)는 dfs
+```
+
+---
+
+### date
+
+| 함수 | 시그니처 | 설명 |
+|------|----------|------|
+| `formatDate` | `formatDate(date: Date, format: string): string` | 토큰 기반 날짜 포맷 변환 |
+
+**지원 토큰**
+
+| 토큰 | 설명 | 예시 |
+|------|------|------|
+| `YYYY` | 4자리 연도 | `2024` |
+| `YY` | 2자리 연도 | `24` |
+| `MM` | 2자리 월 | `06` |
+| `M` | 월 (패딩 없음) | `6` |
+| `DD` | 2자리 일 | `07` |
+| `D` | 일 (패딩 없음) | `7` |
+| `HH` | 24시간제 시 | `09` |
+| `H` | 24시간제 시 (패딩 없음) | `9` |
+| `hh` | 12시간제 시 | `09` |
+| `h` | 12시간제 시 (패딩 없음) | `9` |
+| `mm` | 분 | `05` |
+| `ss` | 초 | `03` |
+| `A` | AM / PM | `PM` |
+| `a` | am / pm | `pm` |
+
+```ts
+import { formatDate } from "simple-ts-tools";
+
+const now = new Date("2024-06-07T09:05:03");
+
+formatDate(now, "YYYY-MM-DD");           // "2024-06-07"
+formatDate(now, "YYYY년 M월 D일");       // "2024년 6월 7일"
+formatDate(now, "HH:mm:ss");             // "09:05:03"
+formatDate(now, "YYYY-MM-DD HH:mm:ss"); // "2024-06-07 09:05:03"
+
+const afternoon = new Date("2024-06-07T14:30:00");
+formatDate(afternoon, "h:mm A");         // "2:30 PM"
+formatDate(afternoon, "hh:mm a");        // "02:30 pm"
+
+// 파일명, 로그 타임스탬프
+`log_${formatDate(new Date(), "YYYY-MM-DD")}.txt` // "log_2024-06-07.txt"
 ```
 
 ---

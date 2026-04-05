@@ -2,6 +2,7 @@ export { deepClone } from "./deepClone";
 export { deepEqual } from "./deepEqual";
 export { deepMerge } from "./deepMerge";
 export { invert } from "./invert";
+export { fromPairs, toPairs } from "./toPairs";
 export { mapKeys } from "./mapKeys";
 export { mapValues } from "./mapValues";
 export { omit } from "./omit";
