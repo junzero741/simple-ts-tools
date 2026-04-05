@@ -628,6 +628,7 @@ emitter
 | `pipe` | `pipe(value, ...fns): T` | 값을 함수들에 왼쪽→오른쪽으로 순서대로 통과 (최대 8단계 타입 안전) |
 | `throttle` | `throttle<T>(fn: T, interval: number): T & { cancel() }` | interval ms 내 최대 한 번 실행 (leading-edge + trailing) |
 | `negate` | `negate<T>(fn: (...args: T) => boolean): (...args: T) => boolean` | 술어 함수의 결과를 반전시킨 새 함수 반환 (`!fn(...)`) |
+| `createStateMachine` | `createStateMachine<S, E>(config): StateMachine<S, E>` | 타입 안전 유한 상태 기계 — 정의된 전이만 허용, 허용 안 된 이벤트는 무시 |
 
 ```ts
 import { curry, debounce, throttle, pipe } from "simple-ts-tools";
@@ -759,6 +760,78 @@ const processItems = (items: string[]) =>
     xs => xs.filter(negate(s => s.length === 0)),  // 빈 문자열 제거
     xs => unique(xs),                               // 중복 제거
   );
+```
+
+#### createStateMachine
+
+`BehaviorSubject`(임의 값 설정 가능)와의 차이: `createStateMachine`은 오직 **정의된 전이**만 허용해 불법 상태 전이를 컴파일 타임·런타임 모두 차단한다.
+
+| 메서드 / 프로퍼티 | 설명 |
+|--------|------|
+| `.state` | 현재 상태 (읽기 전용) |
+| `.send(event)` | 이벤트 전송. 전이 성공이면 `true`, 현재 상태에서 미정의면 `false` (throw 없음) |
+| `.can(event)` | 현재 상태에서 이벤트 허용 여부 확인 — UI 버튼 비활성화에 유용 |
+| `.subscribe(handler)` | 상태 변경 구독. 즉시 현재 상태 전달. 반환값은 구독 해제 함수 |
+| `.reset()` | 초기 상태로 복원, 구독자에게 알림 |
+
+```ts
+import { createStateMachine } from "simple-ts-tools";
+
+// 비동기 데이터 로딩 상태
+const loader = createStateMachine({
+  initial: "idle",
+  transitions: {
+    idle:    { FETCH: "loading" },
+    loading: { RESOLVE: "success", REJECT: "error" },
+    success: { RESET: "idle" },
+    error:   { RETRY: "loading", RESET: "idle" },
+  },
+});
+
+loader.state;           // "idle"
+loader.send("FETCH");   // true  → "loading"
+loader.send("RESET");   // false → loading에서 RESET 미정의, 무시됨
+loader.send("RESOLVE"); // true  → "success"
+
+// UI 버튼 활성화 여부
+loader.can("FETCH");    // false (현재 success 상태)
+loader.can("RESET");    // true
+
+// 상태 구독 — React 컴포넌트나 UI 업데이트
+const unsub = loader.subscribe((state, event) => {
+  console.log(`→ ${state} (via ${event ?? "init"})`);
+});
+// 즉시: "→ success (via init)"
+
+loader.send("RESET");
+// "→ idle (via RESET)"
+
+unsub(); // 구독 해제
+
+// 다단계 폼 스텝
+const form = createStateMachine({
+  initial: "step1",
+  transitions: {
+    step1: { NEXT: "step2" },
+    step2: { NEXT: "step3", BACK: "step1" },
+    step3: { BACK: "step2", SUBMIT: "done" },
+    done:  {},
+  },
+});
+
+form.send("NEXT"); form.send("NEXT"); // step3
+form.can("SUBMIT"); // true
+form.can("NEXT");   // false — step3에서 NEXT 미정의
+
+// 미디어 플레이어
+const player = createStateMachine({
+  initial: "stopped",
+  transitions: {
+    stopped: { PLAY: "playing" },
+    playing: { PAUSE: "paused", STOP: "stopped" },
+    paused:  { PLAY: "playing", STOP: "stopped" },
+  },
+});
 ```
 
 #### scan 예제

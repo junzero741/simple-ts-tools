@@ -7,3 +7,5 @@ export { once } from "./once";
 export { pipe } from "./pipe";
 export { throttle } from "./throttle";
 export { negate } from "./negate";
+export { createStateMachine } from "./stateMachine";
+export type { StateMachineConfig, StateMachine } from "./stateMachine";
