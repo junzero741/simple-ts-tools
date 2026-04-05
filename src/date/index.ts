@@ -26,3 +26,7 @@ export { duration } from "./duration";
 export type { Duration } from "./duration";
 export { parseCron } from "./cron";
 export type { CronExpr } from "./cron";
+export {
+  toTimezone, getTimezoneOffset, timeDifference,
+  nowIn, isDST, getTimezoneAbbr, worldClock,
+} from "./timezone";
