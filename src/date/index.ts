@@ -22,3 +22,5 @@ export { formatRelativeTime } from "./formatRelativeTime";
 export { formatDuration } from "./formatDuration";
 export { addBusinessDays, getBusinessDayCount, nextBusinessDay, prevBusinessDay } from "./businessDays";
 export { dateRange, monthRange } from "./dateRange";
+export { duration } from "./duration";
+export type { Duration } from "./duration";
