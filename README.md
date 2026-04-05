@@ -42,6 +42,8 @@ pnpm add simple-ts-tools
 | `windows` | `windows<T>(arr: T[], size: number, options?): T[][]` | 크기 size의 슬라이딩 윈도우 배열 (이동평균·n-gram 등) |
 | `pairwise` | `pairwise<T>(arr: T[]): [T, T][]` | 인접한 두 요소의 쌍 배열 (`windows(arr, 2)` 축약형) |
 | `rotate` | `rotate<T>(arr: T[], n: number): T[]` | 배열을 왼쪽(양수)/오른쪽(음수)으로 n칸 회전 (비파괴) |
+| `unzip` | `unzip<T extends readonly unknown[]>(pairs: T[]): { [K in keyof T]: T[K][] }` | 튜플 배열 → 개별 배열들 (zip 역연산 / 행렬 전치) |
+| `zipWith` | `zipWith<A,B,R>(a: A[], b: B[], fn: (a:A,b:B)=>R): R[]` | zip + map 일괄 처리 — 두(또는 세) 배열을 결합 함수에 적용 |
 | `take` | `take<T>(arr: T[], n: number): T[]` | 앞에서 n개 반환 |
 | `drop` | `drop<T>(arr: T[], n: number): T[]` | 앞에서 n개 제거한 나머지 반환 |
 | `takeLast` | `takeLast<T>(arr: T[], n: number): T[]` | 뒤에서 n개 반환 |
@@ -50,7 +52,7 @@ pnpm add simple-ts-tools
 | `dropWhile` | `dropWhile<T>(arr: T[], predicate: (item: T) => boolean): T[]` | predicate가 true인 동안 앞에서부터 건너뜀 |
 
 ```ts
-import { chunk, compact, flatten, groupBy, tuple, zip } from "simple-ts-tools";
+import { chunk, compact, flatten, groupBy, tuple, zip, unzip, zipWith } from "simple-ts-tools";
 
 chunk([1, 2, 3, 4, 5], 2);
 // [[1, 2], [3, 4], [5]]
@@ -216,6 +218,30 @@ const prev = rotate(slides, -1);   // 마지막 슬라이드가 앞으로
 // 라운드로빈 담당자 배정
 const nextRound = rotate(workers, currentTurn + 1);
 nextRound[0]; // 다음 담당자
+
+// unzip — 튜플 배열을 개별 배열로 분리 (zip 역연산)
+const pairs = [[1, "a"], [2, "b"], [3, "c"]] as [number, string][];
+const [nums, strs] = unzip(pairs);
+// nums: [1, 2, 3]  strs: ["a", "b", "c"]
+
+// Object.entries 키/값 분리
+const [keys, values] = unzip(Object.entries({ a: 1, b: 2, c: 3 }) as [string, number][]);
+// keys: ["a","b","c"]  values: [1, 2, 3]
+
+// 행렬 전치 (transpose)
+unzip([[1, 2, 3], [4, 5, 6]]);
+// [[1,4], [2,5], [3,6]]
+
+// zipWith — zip + map 일괄 처리 (배열 생성 없이 바로 결합)
+zipWith([1, 2, 3], [4, 5, 6], (a, b) => a + b);   // [5, 7, 9]  벡터 덧셈
+zipWith([1, 2, 3], [4, 5, 6], (a, b) => a * b);   // [4,10,18]  벡터 곱
+
+// 세 배열 동시 결합
+zipWith([1, 2], [3, 4], [5, 6], (a, b, c) => a + b + c); // [9, 12]
+
+// 레이블 생성 — 이름 + 점수
+const labels = zipWith(["Alice","Bob"], [95,80], (name, score) => `${name}: ${score}`);
+// ["Alice: 95", "Bob: 80"]
 
 // take / drop — 앞에서 자르기
 take([1, 2, 3, 4, 5], 3);    // [1, 2, 3]
