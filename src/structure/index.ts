@@ -21,3 +21,5 @@ export { createVersionedMap } from "./versionedMap";
 export type { VersionedMap } from "./versionedMap";
 export { createObjectPool } from "./objectPool";
 export type { ObjectPool, ObjectPoolOptions } from "./objectPool";
+export { IntervalTree } from "./intervalTree";
+export type { Interval } from "./intervalTree";
