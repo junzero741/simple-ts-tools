@@ -32,3 +32,5 @@ export {
 } from "./transform";
 export { merge3, applyChanges } from "./diff3way";
 export type { MergeResult, MergeConflict, Merge3Options, ConflictStrategy } from "./diff3way";
+export { createChangelog } from "./changelog";
+export type { Changelog, ChangeEntry, FieldChange } from "./changelog";
