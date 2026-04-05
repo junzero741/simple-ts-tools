@@ -16,3 +16,4 @@ export { BloomFilter } from "./bloomFilter";
 export { HashMap } from "./hashMap";
 export { SortedArray } from "./sortedArray";
 export type { CompareFn } from "./sortedArray";
+export { Multimap } from "./multimap";
