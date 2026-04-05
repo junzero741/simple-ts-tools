@@ -20,6 +20,8 @@ export type { RateLimiter, RateLimiterOptions } from "./rateLimit";
 export { createCircuitBreaker, CircuitOpenError } from "./circuitBreaker";
 export { createAsyncQueue } from "./asyncQueue";
 export type { AsyncQueue, AsyncQueueOptions } from "./asyncQueue";
+export { createScheduler } from "./scheduler";
+export type { Scheduler, ScheduledTask, TaskOptions } from "./scheduler";
 export type {
   CircuitBreaker,
   CircuitBreakerOptions,

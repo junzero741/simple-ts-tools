@@ -338,6 +338,7 @@ arr.slice(sortedIndex(arr, 3), sortedLastIndex(arr, 3)); // [3, 3, 3]
 | `createRateLimiter` | `createRateLimiter(options): RateLimiter` | 토큰 버킷 기반 시간당 호출 수 제한 — `acquire()`/`tryAcquire()`/`reset()` 제공 |
 | `createCircuitBreaker` | `createCircuitBreaker(fn, options?): CircuitBreaker` | 서킷 브레이커 — 연속 실패 시 OPEN 전환 후 복구 탐색 (CLOSED → OPEN → HALF_OPEN) |
 | `createAsyncQueue` | `createAsyncQueue<T>(options?): AsyncQueue<T>` | 비동기 producer/consumer 큐 — backpressure, `for await...of`, 멀티 consumer 지원 |
+| `createScheduler` | `createScheduler(): Scheduler` | 주기적 작업 스케줄러 — drift 방지, 중복 실행 차단, 에러 격리, 개별/전체 start·stop |
 
 **MemoizeAsyncOptions**
 
@@ -346,6 +347,28 @@ arr.slice(sortedIndex(arr, 3), sortedLastIndex(arr, 3)); // [3, 3, 3]
 | `ttl` | `number` | — | 캐시 만료 시간 (ms). 미지정 시 영구 캐시 |
 | `maxSize` | `number` | — | 최대 캐시 항목 수. 초과 시 FIFO 제거 |
 | `keyFn` | `(...args) => string` | `JSON.stringify` | 캐시 키 생성 함수 |
+
+**TaskOptions** (`scheduler.every`의 세 번째 인자)
+
+| 옵션 | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `id` | `string` | 자동 생성 | 작업 식별자 (`scheduler.tasks.get(id)`로 조회) |
+| `exclusive` | `boolean` | `true` | 이전 실행이 끝나지 않으면 다음 실행 건너뜀. `false`이면 동시 실행 허용 |
+| `runImmediately` | `boolean` | `false` | 등록 즉시 한 번 실행 (첫 interval을 기다리지 않음) |
+| `onError` | `(error, taskId) => void` | — | 실행 중 에러 발생 시 호출. 콜백이 없으면 에러를 조용히 무시 (스케줄러는 계속 동작) |
+
+**ScheduledTask 메서드·프로퍼티**
+
+| | 설명 |
+|-|------|
+| `start()` | 스케줄 시작·재개 |
+| `stop()` | 스케줄 중단 (실행 중인 작업은 완료될 때까지 기다림) |
+| `run()` | 스케줄과 무관하게 즉시 한 번 실행 |
+| `isScheduled` | 스케줄 활성화 여부 |
+| `isRunning` | 현재 실행 중인지 |
+| `lastRunAt` | 직전 실행 완료 시각 (`Date \| null`) |
+| `lastError` | 직전 실행 에러 |
+| `runCount` | 총 실행 횟수 |
 
 **AsyncQueueOptions**
 
@@ -575,6 +598,41 @@ console.log(limit.pendingCount); // 대기 중인 작업 수
 
 // 긴급 취소 — 남은 큐 비우기 (실행 중인 작업은 그대로 완료)
 limit.clearQueue();
+```
+
+```ts
+import { createScheduler } from "simple-ts-tools";
+
+const scheduler = createScheduler();
+
+// DB 정리 작업 — 5분마다, 이전 실행이 끝나야 다음 실행 (exclusive: true 기본값)
+scheduler.every(5 * 60_000, () => db.cleanup(), {
+  id: "db-cleanup",
+  onError: (err, taskId) => logger.error(`${taskId} 실패`, {}, err),
+});
+
+// 헬스 체크 — 30초마다, 등록 즉시 한 번 실행
+scheduler.every(30_000, checkHealth, {
+  id: "health-check",
+  runImmediately: true,
+  onError: (err) => alertOncall(err),
+});
+
+// 통계 집계 — 1분마다, 동시 실행 허용 (exclusive: false)
+scheduler.every(60_000, generateStats, { exclusive: false });
+
+// 개별 작업 제어
+const task = scheduler.tasks.get("db-cleanup")!;
+task.stop();           // 일시 중지
+task.start();          // 재개
+await task.run();      // 즉시 한 번 실행 (스케줄과 무관)
+console.log(task.runCount);    // 총 실행 횟수
+console.log(task.lastRunAt);   // 직전 실행 완료 시각
+console.log(task.lastError);   // 직전 에러
+
+// 전체 제어 (서버 셧다운 등)
+scheduler.stopAll();
+scheduler.startAll();
 ```
 
 ```ts
