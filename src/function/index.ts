@@ -21,4 +21,6 @@ export { createFSM } from "./fsm";
 export type { FSM, FSMConfig, Transition, StateConfig } from "./fsm";
 export { createMemo, computed } from "./memo";
 export type { Memo } from "./memo";
+export { createPipeline } from "./pipeline";
+export type { Pipeline, PipelineResult, PipelineError, PipelineOutcome } from "./pipeline";
 export type { Middleware, MiddlewareFn } from "./middleware";
