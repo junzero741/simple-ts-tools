@@ -23,3 +23,7 @@ export {
   preciseAdd, preciseSubtract, preciseMultiply, preciseDivide,
   preciseRound, bankersRound, splitAmount, roundTo,
 } from "./bigMath";
+export {
+  humanizeNumber, humanizeDuration, approximateNumber,
+  toFraction, pluralizeUnit, progressBar,
+} from "./humanize";
