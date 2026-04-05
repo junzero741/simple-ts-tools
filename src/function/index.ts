@@ -34,3 +34,7 @@ export { createPluginSystem } from "./pluginSystem";
 export type { PluginSystem, PluginDef } from "./pluginSystem";
 export { createRuleEngine } from "./ruleEngine";
 export type { RuleEngine, Rule } from "./ruleEngine";
+export {
+  withTiming, withFallback, withLogging,
+  withTransform, withMaxCalls, withDelay, withValidation,
+} from "./retry.decorator";
