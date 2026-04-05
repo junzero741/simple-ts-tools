@@ -149,9 +149,18 @@ sampleSize(questions, 5);           // 시험 문제 랜덤 출제
 |------|----------|------|
 | `createDeferred` | `createDeferred<T>(): Deferred<T>` | 외부에서 resolve/reject 가능한 Promise 객체 생성 |
 | `mapAsync` | `mapAsync<T, R>(arr: T[], fn, options?): Promise<R[]>` | 동시성 제한 병렬 처리 (기본: 제한 없음) |
+| `memoizeAsync` | `memoizeAsync<TArgs, TReturn>(fn, options?): MemoizedFn` | 비동기 함수 캐싱 (TTL·maxSize·thundering herd 방지) |
 | `retry` | `retry<T>(fn: () => Promise<T>, options?: RetryOptions): Promise<T>` | 실패 시 지수 백오프로 재시도 |
 | `sleep` | `sleep(ms: number): Promise<void>` | 지정한 시간(ms)만큼 대기 |
 | `timeout` | `timeout<T>(promise: Promise<T>, ms: number, message?: string): Promise<T>` | 타임아웃 초과 시 reject |
+
+**MemoizeAsyncOptions**
+
+| 옵션 | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `ttl` | `number` | — | 캐시 만료 시간 (ms). 미지정 시 영구 캐시 |
+| `maxSize` | `number` | — | 최대 캐시 항목 수. 초과 시 FIFO 제거 |
+| `keyFn` | `(...args) => string` | `JSON.stringify` | 캐시 키 생성 함수 |
 
 **RetryOptions**
 
@@ -220,6 +229,32 @@ ready.status; // "pending" | "fulfilled" | "rejected"
 // 중복 호출 안전 — resolve/reject 이후 추가 호출은 무시됨
 ready.resolve();
 ready.resolve(); // no-op
+
+// memoizeAsync — 비동기 함수 캐싱
+const getUser = memoizeAsync(fetchUser, { ttl: 60_000 });
+await getUser(1); // 네트워크 요청
+await getUser(1); // 60초 내 → 캐시 반환 (fn 재호출 없음)
+
+// maxSize: LRU-like 항목 수 제한
+const getProduct = memoizeAsync(fetchProduct, { ttl: 30_000, maxSize: 100 });
+
+// thundering herd 자동 방지
+// 같은 키 동시 호출 → 단 한 번만 실행, 결과는 모두에게 공유
+const [a, b, c] = await Promise.all([getUser(1), getUser(1), getUser(1)]);
+// fetchUser는 한 번만 호출됨
+
+// 특정 키 무효화 (예: 데이터 수정 후)
+await updateUser(1, newData);
+getUser.invalidate(1); // 다음 호출 시 재조회
+
+// 전체 캐시 초기화
+getUser.clear();
+
+// keyFn 커스터마이즈 — 역할에 무관하게 id 기준 캐싱
+const getPermissions = memoizeAsync(fetchPermissions, {
+  keyFn: (user) => user.id,
+  ttl: 5 * 60_000,
+});
 ```
 
 ---
