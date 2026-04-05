@@ -24,3 +24,5 @@ export { unzip, zipWith } from "./unzip";
 export { scan } from "./scan";
 export { orderBy } from "./orderBy";
 export { binarySearch, sortedIndex, sortedLastIndex } from "./binarySearch";
+export { comparing, naturalOrder, reverseOrder } from "./comparator";
+export type { Comparator, CompareOptions, Direction, NullsPosition } from "./comparator";
