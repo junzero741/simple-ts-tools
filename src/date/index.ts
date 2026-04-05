@@ -24,3 +24,5 @@ export { addBusinessDays, getBusinessDayCount, nextBusinessDay, prevBusinessDay 
 export { dateRange, monthRange } from "./dateRange";
 export { duration } from "./duration";
 export type { Duration } from "./duration";
+export { parseCron } from "./cron";
+export type { CronExpr } from "./cron";
