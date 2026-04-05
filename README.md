@@ -1097,9 +1097,80 @@ rangeSum(2, 4); // arr[2]+arr[3]+arr[4] = 4+1+5 = 10
 
 ### http
 
-| 클래스 | 설명 |
+| 함수/클래스 | 설명 |
+|-------------|------|
+| `createHttpClient` | baseUrl·기본 헤더·인터셉터·타임아웃을 공유하는 HTTP 클라이언트 인스턴스 생성 |
+| `RequestBuilder` | 컴파일 타임 안전성이 보장된 HTTP 요청 빌더 (URL·메서드 지정 전까지 send() 불가) |
+
+**HttpClientOptions**
+
+| 옵션 | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `baseUrl` | `string` | `""` | 모든 요청의 기본 URL. 절대 URL은 이 값을 무시한다. |
+| `headers` | `Record<string, string>` | `{}` | 모든 요청에 기본으로 포함될 헤더 |
+| `timeout` | `number` | — | 기본 타임아웃 (ms). 개별 요청에서 override 가능 |
+
+**HttpClient 메서드**
+
+| 메서드 | 설명 |
 |--------|------|
-| `RequestBuilder` | 컴파일 타임 안전성이 보장된 HTTP 요청 빌더 |
+| `get<T>(url, options?)` | GET 요청 |
+| `post<T>(url, body?, options?)` | POST 요청 |
+| `put<T>(url, body?, options?)` | PUT 요청 |
+| `patch<T>(url, body?, options?)` | PATCH 요청 |
+| `delete<T>(url, options?)` | DELETE 요청 |
+| `request<T>(config)` | 범용 요청 (인터셉터 체인 포함) |
+| `interceptors.request.use(fn)` | 요청 인터셉터 등록 → ID 반환 |
+| `interceptors.response.use(fn, onError?)` | 응답 인터셉터 등록 |
+| `interceptors.request.eject(id)` | 인터셉터 제거 |
+
+```ts
+import { createHttpClient, HttpError, TimeoutError } from "simple-ts-tools";
+
+// 클라이언트 생성 — 공통 설정 한 곳에서 관리
+const client = createHttpClient({
+  baseUrl: "https://api.example.com",
+  timeout: 10_000,
+  headers: { Authorization: `Bearer ${getToken()}` },
+});
+
+// 타입 안전 요청
+const user = await client.get<User>("/users/123");
+const post = await client.post<Post>("/posts", { title: "Hello", body: "..." });
+await client.delete("/posts/42");
+
+// 쿼리 파라미터
+const list = await client.get<User[]>("/users", {
+  params: { page: 2, limit: 20, active: true },
+});
+
+// 요청 인터셉터 — 모든 요청에 trace ID 추가
+const id = client.interceptors.request.use((config) => ({
+  ...config,
+  headers: { ...config.headers, "X-Request-ID": crypto.randomUUID() },
+}));
+client.interceptors.request.eject(id); // 인터셉터 제거
+
+// 응답 인터셉터 — 401 시 토큰 갱신 후 재시도
+client.interceptors.response.use(null, async (error) => {
+  if (error instanceof HttpError && error.status === 401) {
+    await refreshAccessToken();
+    return client.request(error.config); // 원래 요청 재시도
+  }
+  throw error;
+});
+
+// 에러 처리 — HttpError는 status·body·config를 포함
+try {
+  await client.post("/validate", formData);
+} catch (e) {
+  if (e instanceof HttpError) {
+    console.error(`${e.status}: ${JSON.stringify(e.body)}`);
+  } else if (e instanceof TimeoutError) {
+    console.error(`타임아웃 (${e.timeoutMs}ms)`);
+  }
+}
+```
 
 URL과 메서드가 모두 지정된 경우에만 `.build()` / `.send<T>()` 호출 가능 (타입 레벨 강제).
 
