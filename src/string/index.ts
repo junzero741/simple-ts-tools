@@ -28,3 +28,4 @@ export {
 } from "./sanitize";
 export { globMatch, createGlobMatcher } from "./glob";
 export { dedent, indent, reindent, trimTrailingWhitespace, collapseBlankLines } from "./dedent";
+export { naturalCompare, naturalCompareInsensitive, naturalSort, naturalSortBy } from "./naturalSort";
