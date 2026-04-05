@@ -38,3 +38,5 @@ export { createChannel, select } from "./channel";
 export type { Channel, SelectResult } from "./channel";
 export { createTaskRunner } from "./taskRunner";
 export type { TaskRunner, TaskRunnerResult } from "./taskRunner";
+export { createClock } from "./clock";
+export type { Clock } from "./clock";
