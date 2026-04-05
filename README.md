@@ -294,6 +294,7 @@ const { data, totalPages, hasNext, hasPrev } = paginate(allItems, currentPage, 2
 | `sleep` | `sleep(ms: number): Promise<void>` | 지정한 시간(ms)만큼 대기 |
 | `timeout` | `timeout<T>(promise: Promise<T>, ms: number, message?: string): Promise<T>` | 타임아웃 초과 시 reject |
 | `createBatch` | `createBatch<K, V>(batchFn, options?): Batcher<K, V>` | DataLoader 패턴 — 같은 틱의 `load(key)` 호출을 자동으로 묶어 단일 배치 함수로 처리 |
+| `poll` | `poll<T>(fn, predicate, options?): Promise<T>` | 조건이 충족될 때까지 비동기 함수를 반복 호출 (`retry`는 실패 재시도, `poll`은 정상 응답 검사) |
 
 **MemoizeAsyncOptions**
 
@@ -475,6 +476,56 @@ const logLoader = createBatch(
   async (ids: string[]) => bulkFetchLogs(ids),
   { maxWait: 10 }
 );
+```
+
+**PollOptions**
+
+| 옵션 | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `interval` | `number` | `1000` | 시도 간격 (ms) |
+| `timeout` | `number` | — | 최대 대기 시간 (ms). 초과 시 `PollTimeoutError` 발생. 미지정 시 무제한 |
+| `onAttempt` | `(attempt: number) => void` | — | 매 시도 전 호출 (진행률 UI 업데이트 등) |
+
+`retry` vs `poll` 비교:
+- `retry`: fn이 **throw** 하면 재시도 (네트워크 오류 등 예외 상황 대응)
+- `poll`: fn이 **정상 값**을 반환하지만 원하는 조건이 아닐 때 재시도 (상태 변화 대기)
+
+```ts
+import { poll, PollTimeoutError } from "simple-ts-tools";
+
+// 백그라운드 잡 완료 대기
+const job = await poll(
+  () => fetch(`/api/jobs/${jobId}`).then(r => r.json()),
+  result => result.status === "done",
+  { interval: 2000, timeout: 60_000 }
+);
+
+// 서버 헬스 체크 — ready 상태까지 1초마다 확인 (최대 30초)
+await poll(
+  () => fetch("/health").then(r => r.json()),
+  res => res.status === "ok",
+  { interval: 1000, timeout: 30_000 }
+);
+
+// 배포 완료 대기 — onAttempt로 진행 상황 로깅
+await poll(
+  () => getDeployStatus(deployId),
+  s => s.phase === "Running",
+  {
+    interval: 5000,
+    timeout: 5 * 60_000,
+    onAttempt: n => console.log(`Checking deployment... (attempt ${n})`),
+  }
+);
+
+// timeout 초과 시 PollTimeoutError 처리
+try {
+  await poll(checkQueue, q => q.length === 0, { timeout: 10_000 });
+} catch (e) {
+  if (e instanceof PollTimeoutError) {
+    console.error(`${e.attempts}번 시도 후 타임아웃 (${e.elapsedMs}ms)`);
+  }
+}
 ```
 
 ---

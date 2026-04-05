@@ -11,3 +11,5 @@ export { parallel } from "./parallel";
 export type { AsyncFn } from "./parallel";
 export { createBatch } from "./batch";
 export type { BatchOptions, Batcher } from "./batch";
+export { poll, PollTimeoutError } from "./poll";
+export type { PollOptions } from "./poll";
