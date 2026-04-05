@@ -559,6 +559,9 @@ const progress = percentage(uploadedBytes, totalBytes, 1);
 | `deepMerge` | `deepMerge<T, S>(target: T, source: S): T & S` | 두 plain 객체를 재귀적으로 병합 (배열은 source로 덮어씀) |
 | `flattenObject` | `flattenObject(obj, separator?): Record<string, unknown>` | 중첩 객체 → 점 구분자 평탄 키 (`{ "a.b.c": 1 }`) |
 | `unflattenObject` | `unflattenObject(obj, separator?): Record<string, unknown>` | 평탄 키 → 중첩 객체 복원 (왕복 가능) |
+| `getIn` | `getIn(obj: unknown, path: string): unknown` | 점 구분자 경로로 중첩 값 읽기 (없으면 `undefined`) |
+| `setIn` | `setIn<T>(obj: T, path: string, value: unknown): T` | 점 구분자 경로에 값 설정한 새 객체 반환 (불변) |
+| `hasIn` | `hasIn(obj: unknown, path: string): boolean` | 점 구분자 경로가 존재하는지 확인 |
 | `fromPairs` | `fromPairs<K, V>(pairs: [K, V][]): Record<K, V>` | [키, 값] 튜플 배열 → 객체 |
 | `invert` | `invert<K, V>(obj: Record<K, V>): Record<string, K>` | 키와 값을 뒤집은 새 객체 반환 |
 | `toPairs` | `toPairs<T>(obj: T): [keyof T, T[keyof T]][]` | 객체 → [키, 값] 튜플 배열 |
@@ -667,6 +670,26 @@ unflattenObject(flat); // 원본 config 복원
 const errors = flattenObject(apiError.details);
 // { "user.email": "이메일 형식이 올바르지 않습니다", "user.name": "필수 항목입니다" }
 setFieldErrors(errors);
+
+// 점 구분자 경로 접근 — 중첩 상태, 폼, config에서 자주 사용
+const state = { user: { address: { city: "Seoul" }, scores: [90, 85] } };
+
+getIn(state, "user.address.city");   // "Seoul"
+getIn(state, "user.scores.0");       // 90
+getIn(state, "user.age");            // undefined (존재하지 않는 경로)
+hasIn(state, "user.address.city");   // true
+hasIn(state, "user.address.zip");    // false
+hasIn({ a: undefined }, "a");        // true (키는 존재, 값이 undefined인 경우)
+
+// setIn — 불변 업데이트 (원본 변경 없음)
+const next = setIn(state, "user.address.city", "Busan");
+state.user.address.city;  // "Seoul" (변경 없음)
+next.user.address.city;   // "Busan"
+
+setIn({}, "a.b.c", 1);   // { a: { b: { c: 1 } } } (중간 경로 자동 생성)
+
+// 실사용: 폼 필드 개별 업데이트
+const form = setIn(currentForm, `items.${index}.quantity`, newQty);
 ```
 
 ---
@@ -742,6 +765,10 @@ formatPhoneNumber("0212345678");  // "02-123-4567" (8자리 지역번호 형식)
 | `kebabToCamel` | `kebabToCamel(str: string): string` | kebab-case → camelCase |
 | `truncate` | `truncate(str: string, maxLength: number, suffix?: string): string` | maxLength 초과 시 suffix(기본 "…")를 붙여 잘라냄 |
 | `slugify` | `slugify(str: string, options?: SlugifyOptions): string` | 문자열을 URL-safe 슬러그로 변환 (악센트 제거, 특수 문자 제거) |
+| `mask` | `mask(str: string, start?: number, end?: number, char?: string): string` | 지정 범위를 마스킹 문자로 대체 |
+| `maskEmail` | `maskEmail(email: string): string` | 이메일 local 파트 앞 2자 이후 마스킹 |
+| `maskCard` | `maskCard(cardNumber: string): string` | 카드번호 마지막 4자리만 표시, 4자리씩 하이픈 구분 |
+| `maskPhone` | `maskPhone(phone: string): string` | 전화번호 중간 자리 마스킹 (한국 형식) |
 
 ```ts
 import { isEmpty, truncate, capitalize } from "simple-ts-tools";
@@ -825,6 +852,20 @@ slugify("Hello World", { lowercase: false });    // "Hello-World"
 const post = { title: "나의 첫 번째 포스트!" };
 const url = `/posts/${slugify(post.title)}`; // "/posts/" (한글 → 비라틴 제거)
 // 한글 포스트는 별도 인코딩 또는 영문 slug 필드 활용 권장
+
+// 마스킹 — 민감 정보 표시
+mask("1234567890", 0, 6);              // "******7890"
+mask("ABCDEFGH", 2, 6);               // "AB****GH"
+
+maskEmail("alice@example.com");        // "al***@example.com"
+maskEmail("ab@test.com");              // "ab@test.com" (2자 이하 그대로)
+
+maskCard("1234567890123456");          // "****-****-****-3456"
+maskCard("1234-5678-9012-3456");       // "****-****-****-3456"
+
+maskPhone("01012345678");             // "010-****-5678"
+maskPhone("010-1234-5678");           // "010-****-5678"
+maskPhone("0212345678");              // "02-****-5678"
 ```
 
 ---
@@ -878,7 +919,13 @@ dfs(tree);  // [4, 5, 2, 3, 1]
 | `isSameDay` | `isSameDay(a: Date, b: Date): boolean` | 같은 날(연·월·일)인지 확인 (시각 무시) |
 | `isWeekend` | `isWeekend(date: Date): boolean` | 토요일 또는 일요일인지 확인 |
 | `isWeekday` | `isWeekday(date: Date): boolean` | 월~금인지 확인 |
+| `isSameMonth` | `isSameMonth(a: Date, b: Date): boolean` | 같은 달(연·월)인지 확인 |
 | `diffDays` | `diffDays(a: Date, b: Date): number` | 두 날짜의 일수 차이 (절댓값) |
+| `startOfMonth` | `startOfMonth(date: Date): Date` | 해당 월의 첫날 00:00:00.000 |
+| `endOfMonth` | `endOfMonth(date: Date): Date` | 해당 월의 마지막 날 23:59:59.999 |
+| `startOfWeek` | `startOfWeek(date: Date, weekStart?: 0\|1): Date` | 해당 주 시작일 00:00:00.000 (0=일, 1=월) |
+| `endOfWeek` | `endOfWeek(date: Date, weekStart?: 0\|1): Date` | 해당 주 마지막일 23:59:59.999 |
+| `getQuarter` | `getQuarter(date: Date): 1\|2\|3\|4` | 분기 반환 (1~4) |
 | `formatDate` | `formatDate(date: Date, format: string): string` | 토큰 기반 날짜 포맷 변환 |
 | `formatRelativeTime` | `formatRelativeTime(date: Date, base?: Date, locale?: "ko"\|"en"): string` | 상대 시간 표시 ("3분 전", "2일 후") |
 | `parseDate` | `parseDate(input: string, locale?: "en-US"\|"en-GB"): Date \| null` | 다양한 형식의 날짜 문자열 → Date (실패 시 null) |
@@ -976,6 +1023,32 @@ parseDate("not-a-date");           // null
 // API 응답의 날짜 문자열을 안전하게 파싱
 const date = parseDate(apiResponse.createdAt);
 if (date) formatRelativeTime(date);
+
+// 월 범위 — 캘린더, 대시보드 데이터 범위
+const today = new Date("2024-06-15");
+startOfMonth(today);  // 2024-06-01T00:00:00.000
+endOfMonth(today);    // 2024-06-30T23:59:59.999
+endOfMonth(new Date("2024-02-01"));  // 2024-02-29 (윤년)
+
+// 주 범위 — 주간 통계, 캘린더 뷰
+startOfWeek(today);        // 2024-06-09 (일요일 기준)
+startOfWeek(today, 1);     // 2024-06-10 (월요일 기준)
+endOfWeek(today);          // 2024-06-15 (토요일)
+endOfWeek(today, 1);       // 2024-06-16 (일요일)
+
+// 분기 — 분기 보고서, 재무 데이터
+getQuarter(new Date("2024-01-15"));  // 1
+getQuarter(new Date("2024-04-01"));  // 2
+getQuarter(new Date("2024-07-31"));  // 3
+getQuarter(new Date("2024-10-01"));  // 4
+
+// 같은 달 확인 — 월별 집계 그룹핑
+isSameMonth(new Date("2024-06-01"), new Date("2024-06-30"));  // true
+isSameMonth(new Date("2024-06-01"), new Date("2024-07-01"));  // false
+
+// 실사용: 이번 달 매출 쿼리
+const [from, to] = [startOfMonth(new Date()), endOfMonth(new Date())];
+db.query("SELECT * FROM orders WHERE created_at BETWEEN ? AND ?", [from, to]);
 ```
 
 ---

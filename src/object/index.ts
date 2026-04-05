@@ -1,5 +1,6 @@
 export { deepClone } from "./deepClone";
 export { flattenObject, unflattenObject } from "./flattenObject";
+export { getIn, hasIn, setIn } from "./path";
 export { deepEqual } from "./deepEqual";
 export { deepMerge } from "./deepMerge";
 export { invert } from "./invert";

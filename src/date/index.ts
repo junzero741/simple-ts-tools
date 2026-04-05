@@ -4,10 +4,16 @@ export {
   addYears,
   diffDays,
   endOfDay,
+  endOfMonth,
+  endOfWeek,
+  getQuarter,
   isSameDay,
+  isSameMonth,
   isWeekday,
   isWeekend,
   startOfDay,
+  startOfMonth,
+  startOfWeek,
   subDays,
 } from "./dateUtils";
 export { formatDate } from "./formatDate";
