@@ -26,3 +26,7 @@ export { defineValueObject } from "./valueObject";
 export type { ValueObject, ValueObjectInstance, ValueObjectFactory } from "./valueObject";
 export { createProjection, composeProjections } from "./projection";
 export type { Projection, ProjectionMap } from "./projection";
+export {
+  renameKeys, selectKeys, zipObject, indexBy,
+  mapValuesDeep, mergeWith, keysToSnakeCase, keysToCamelCase, countValues,
+} from "./transform";
