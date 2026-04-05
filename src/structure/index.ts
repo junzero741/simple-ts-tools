@@ -5,3 +5,5 @@ export { Trie } from "./Trie";
 export { BitSet } from "./bitset";
 export { LinkedList } from "./linkedList";
 export type { ListNode } from "./linkedList";
+export { createRing } from "./ring";
+export type { Ring } from "./ring";
