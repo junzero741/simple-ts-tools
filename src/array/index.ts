@@ -8,6 +8,7 @@ export { intersection } from "./intersection";
 export { keyBy } from "./keyBy";
 export { maxBy, minBy } from "./minBy";
 export { partition } from "./partition";
+export { sample, sampleSize, shuffle } from "./shuffle";
 export { sortBy } from "./sortBy";
 export { sum, sumBy } from "./sumBy";
 export { tuple } from "./tuple";

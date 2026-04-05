@@ -22,6 +22,9 @@ pnpm add simple-ts-tools
 | `maxBy` | `maxBy<T>(arr: T[], keyFn: (item: T) => number): T \| undefined` | keyFn 값이 가장 큰 요소 반환 |
 | `minBy` | `minBy<T>(arr: T[], keyFn: (item: T) => number): T \| undefined` | keyFn 값이 가장 작은 요소 반환 |
 | `partition` | `partition<T>(arr: T[], predicate): [T[], T[]]` | predicate 기준으로 두 배열로 분리 (타입 가드 지원) |
+| `sample` | `sample<T>(arr: T[]): T \| undefined` | 배열에서 무작위로 한 요소 반환 |
+| `sampleSize` | `sampleSize<T>(arr: T[], n: number): T[]` | 중복 없이 무작위로 n개 반환 |
+| `shuffle` | `shuffle<T>(arr: T[]): T[]` | Fisher-Yates 알고리즘으로 섞은 새 배열 반환 (비파괴) |
 | `sum` | `sum(arr: number[]): number` | 숫자 배열의 합 |
 | `sumBy` | `sumBy<T>(arr: T[], keyFn: (item: T) => number): number` | keyFn으로 추출한 값들의 합 |
 | `flatten` | `flatten<T>(arr: T[], depth?: number): FlatArray<T[], number>[]` | 중첩 배열 펼치기 (기본: 1단계) |
@@ -126,6 +129,16 @@ minBy(events, e => e.startAt.getTime()); // 가장 이른 일정
 sum([1, 2, 3, 4, 5]);                         // 15
 sumBy(cart, item => item.price * item.qty);   // 장바구니 총액
 sumBy(tasks, t => t.estimatedHours);          // 총 예상 시간
+
+// 배열 무작위 셔플 (비파괴 — Fisher-Yates)
+shuffle([1, 2, 3, 4, 5]);          // [3, 1, 5, 2, 4] (무작위)
+
+// 무작위 1개 선택
+sample(["A", "B", "C", "D"]);      // "B" (무작위)
+
+// 중복 없이 n개 선택
+sampleSize([1, 2, 3, 4, 5], 3);    // [4, 1, 3] (무작위 3개)
+sampleSize(questions, 5);           // 시험 문제 랜덤 출제
 ```
 
 ---
@@ -134,6 +147,7 @@ sumBy(tasks, t => t.estimatedHours);          // 총 예상 시간
 
 | 함수 | 시그니처 | 설명 |
 |------|----------|------|
+| `mapAsync` | `mapAsync<T, R>(arr: T[], fn, options?): Promise<R[]>` | 동시성 제한 병렬 처리 (기본: 제한 없음) |
 | `sleep` | `sleep(ms: number): Promise<void>` | 지정한 시간(ms)만큼 대기 |
 | `retry` | `retry<T>(fn: () => Promise<T>, options?: RetryOptions): Promise<T>` | 실패 시 지수 백오프로 재시도 |
 
@@ -147,7 +161,20 @@ sumBy(tasks, t => t.estimatedHours);          // 총 예상 시간
 | `when` | `(error: unknown) => boolean` | — | 재시도 조건 함수 |
 
 ```ts
-import { sleep, retry } from "simple-ts-tools";
+import { mapAsync, sleep, retry } from "simple-ts-tools";
+
+// 동시성 제한 병렬 처리 — 외부 API rate limit 대응
+const users = await mapAsync(
+  userIds,
+  id => fetchUser(id),
+  { concurrency: 3 }   // 최대 3개 동시 실행
+);
+
+// concurrency 미지정 = Promise.all과 동일
+const results = await mapAsync(items, item => processItem(item));
+
+// index 활용
+const indexed = await mapAsync(rows, async (row, i) => ({ ...row, rank: i + 1 }));
 
 // 300ms 대기
 await sleep(300);
@@ -361,6 +388,7 @@ clamp(inputValue, min, max);
 | `deepClone` | `deepClone<T>(value: T): T` | 재귀적 깊은 복사 (Date/Map/Set/RegExp 포함) |
 | `deepEqual` | `deepEqual(a: unknown, b: unknown): boolean` | 재귀적 깊은 동등 비교 |
 | `deepMerge` | `deepMerge<T, S>(target: T, source: S): T & S` | 두 plain 객체를 재귀적으로 병합 (배열은 source로 덮어씀) |
+| `invert` | `invert<K, V>(obj: Record<K, V>): Record<string, K>` | 키와 값을 뒤집은 새 객체 반환 |
 | `mapKeys` | `mapKeys<V>(obj: Record<string, V>, keyFn: (key: string) => string): Record<string, V>` | 모든 키에 변환 함수 적용 |
 | `mapValues` | `mapValues<T, U>(obj: T, valueFn: (value, key) => U): Record<string, U>` | 모든 값에 변환 함수 적용 |
 | `omit` | `omit<T, K extends keyof T>(obj: T, keys: readonly K[]): Omit<T, K>` | 지정한 키를 제외한 새 객체 반환 |
@@ -416,6 +444,17 @@ deepMerge(defaults, userConfig);
 // 중첩 상태 부분 업데이트
 deepMerge(state, { ui: { theme: "dark" } });
 // state의 다른 ui 필드는 유지, theme만 변경
+
+// 키-값 반전 — 코드 ↔ 이름 양방향 조회
+const StatusCode = { OK: 200, NOT_FOUND: 404, SERVER_ERROR: 500 };
+const byCode = invert(StatusCode);
+byCode[200];    // "OK"
+byCode[404];    // "NOT_FOUND"
+
+// 열거형을 반전해 디버깅 메시지 생성
+const ErrorCode = { INVALID_INPUT: "E001", NOT_FOUND: "E002" };
+const codeToName = invert(ErrorCode);
+codeToName["E001"]; // "INVALID_INPUT"
 ```
 
 ---
