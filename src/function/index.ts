@@ -26,3 +26,5 @@ export type { Pipeline, PipelineResult, PipelineError, PipelineOutcome } from ".
 export type { Middleware, MiddlewareFn } from "./middleware";
 export { createFeatureFlags } from "./featureFlags";
 export type { FeatureFlags, FlagValue } from "./featureFlags";
+export { contract, withInvariant, ContractError } from "./contract";
+export type { ContractOptions } from "./contract";
