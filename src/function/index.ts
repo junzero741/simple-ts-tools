@@ -8,5 +8,6 @@ export { pipe } from "./pipe";
 export { throttle } from "./throttle";
 export { negate } from "./negate";
 export { tap } from "./tap";
+export { pipeAsync } from "./pipeAsync";
 export { createStateMachine } from "./stateMachine";
 export type { StateMachineConfig, StateMachine } from "./stateMachine";

@@ -648,6 +648,7 @@ emitter
 | `memoize` | `memoize<TArgs, TReturn>(fn, keyFn?): fn & { cache: Map; clear() }` | 인자 기준으로 결과 캐싱 |
 | `once` | `once<TArgs, TReturn>(fn): fn & { reset() }` | 최초 한 번만 실행, 이후 호출은 첫 결과 반환 |
 | `pipe` | `pipe(value, ...fns): T` | 값을 함수들에 왼쪽→오른쪽으로 순서대로 통과 (최대 8단계 타입 안전) |
+| `pipeAsync` | `pipeAsync(value, ...fns): Promise<T>` | `pipe`의 비동기 버전 — 동기·비동기 함수 혼합 가능, 각 단계의 Promise를 순서대로 await |
 | `throttle` | `throttle<T>(fn: T, interval: number): T & { cancel() }` | interval ms 내 최대 한 번 실행 (leading-edge + trailing) |
 | `negate` | `negate<T>(fn: (...args: T) => boolean): (...args: T) => boolean` | 술어 함수의 결과를 반전시킨 새 함수 반환 (`!fn(...)`) |
 | `tap` | `tap<T>(fn: (value: T) => void): (value: T) => T` | pipe/compose 체인에서 값을 변경하지 않고 부수 효과 실행 (로깅·분석·디버깅) |
@@ -803,6 +804,24 @@ const result = pipe(
   tap(xs => console.log("원본:", xs.length)),
   xs => xs.filter(u => u.active),
   tap(xs => console.log("활성 유저:", xs.length)),
+);
+
+// pipeAsync — 동기·비동기 함수 혼합 파이프라인
+const user = await pipeAsync(
+  rawInput,
+  sanitize,                                        // 동기
+  validateCredentials,                             // async: DB 조회
+  tap(u => logger.info("login", { id: u.id })),   // 동기 side-effect
+  enrichWithPermissions,                           // async: 권한 조회
+);
+
+// pipe vs pipeAsync: 비동기 단계가 하나라도 있으면 pipeAsync 사용
+const report = await pipeAsync(
+  startDate,
+  fetchRawData,    // async
+  normalize,       // 동기
+  aggregateByDay,  // 동기
+  generatePDF,     // async
 );
 ```
 
