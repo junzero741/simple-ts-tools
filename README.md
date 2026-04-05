@@ -775,6 +775,9 @@ const zScore = (score - mean(scores)) / classStdDev;
 | `pickBy` | `pickBy<T>(obj: T, predicate: (value, key) => boolean): Partial<T>` | predicate 통과 항목만 추출한 새 객체 반환 |
 | `diff` | `diff(a, b: Record<string, unknown>): DiffResult` | 두 객체의 얕은 diff — added/removed/changed 반환 |
 | `isDiffEmpty` | `isDiffEmpty(result: DiffResult): boolean` | diff 결과에 변경사항이 없으면 true |
+| `defaults` | `defaults<T>(target: T, ...sources: Partial<T>[]): T` | target의 `undefined` 속성만 source로 채움 (null·기존값 유지) |
+| `omitNil` | `omitNil<T>(obj: T): ...` | null·undefined 속성 제거 (0·false·"" 유지) |
+| `omitFalsy` | `omitFalsy<T>(obj: T): Partial<T>` | 모든 falsy 속성(null·undefined·0·false·"") 제거 |
 
 반환 타입이 `Pick<T, K>` / `Omit<T, K>`로 정확히 추론되어 이후 코드에서 추가 타입 단언 불필요.
 
@@ -917,6 +920,44 @@ if (!isDiffEmpty(d)) {
 // PATCH 페이로드 생성 — 변경된 필드만 서버로 전송
 const patch = diff(original, edited).changed;
 api.patch("/user", Object.fromEntries(Object.entries(patch).map(([k, v]) => [k, v.to])));
+
+// defaults — undefined인 속성만 채움 (deepMerge와의 차이)
+// deepMerge: source가 target을 덮어씀 (source 우선)
+// defaults:  target의 기존 값 유지, undefined만 source에서 채움 (target 우선)
+
+defaults({ a: 1, b: undefined }, { a: 99, b: 2, c: 3 })
+// { a: 1, b: 2, c: 3 }  — a는 target 유지, b는 source에서 채움
+
+defaults({ a: null }, { a: 42 })
+// { a: null }  — null은 "명시적으로 없음"이므로 유지
+
+// 함수 옵션 기본값 처리
+const opts = defaults(userOptions, { timeout: 5000, retries: 3, verbose: false });
+
+// 여러 소스 — 왼쪽부터 적용 (먼저 나온 소스가 우선)
+defaults({ a: undefined }, { a: 1, b: 2 }, { a: 9, c: 3 })
+// { a: 1, b: 2, c: 3 }  — a는 첫 번째 소스의 1
+
+// omitNil — null·undefined 제거 (0·false·"" 유지)
+omitNil({ a: 1, b: null, c: undefined, d: 0, e: "" })
+// { a: 1, d: 0, e: "" }
+
+// API 파라미터 정리 — 선택하지 않은 필터는 쿼리에서 자동 제외
+const params = omitNil({
+  page: 1,
+  search: searchQuery || null,     // 빈 검색어
+  category: selectedCategory,      // 미선택이면 undefined
+  sort: "createdAt",
+});
+fetch(`/api/items?${buildQueryString(params)}`);
+
+// omitFalsy — 더 공격적: 0·false·""도 제거
+omitFalsy({ a: 1, b: null, c: 0, d: false, e: "", f: "hello" })
+// { a: 1, f: "hello" }
+
+// omitNil vs omitFalsy 선택 기준:
+// omitNil:   0·false·""가 의미 있는 값일 때 (수량, 토글, 빈 문자열 초기화)
+// omitFalsy: "있는 값"만 전달하면 될 때 (CSS 클래스 맵, 태그 필터 등)
 ```
 
 ---
