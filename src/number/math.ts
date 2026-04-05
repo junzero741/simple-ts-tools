@@ -45,6 +45,46 @@ export function normalize(value: number, min: number, max: number, clamp = false
  * percentage(2, 3, 2)     // 66.67
  * percentage(0, 0)        // 0
  */
+/**
+ * value를 [inMin, inMax] 범위에서 [outMin, outMax] 범위로 선형 매핑한다.
+ * `normalize` + `lerp`의 합성 — 두 임의 범위 사이의 직접 변환.
+ *
+ * - inMin === inMax 이면 outMin을 반환 (division by zero 방지)
+ * - clamp: true 이면 결과가 [outMin, outMax]를 벗어나지 않도록 제한
+ * - 역방향 범위(inMax < inMin, outMax < outMin)도 지원
+ *
+ * @example
+ * // 데이터 값 → 픽셀 좌표
+ * mapRange(50, 0, 100, 0, 800)      // 400
+ *
+ * // 슬라이더 위치(0~1) → 볼륨(0~100)
+ * mapRange(0.7, 0, 1, 0, 100)       // 70
+ *
+ * // 온도 변환: 섭씨 → 화씨
+ * mapRange(100, 0, 100, 32, 212)    // 212
+ * mapRange(0,   0, 100, 32, 212)    // 32
+ *
+ * // 범위 초과 값 clamp
+ * mapRange(150, 0, 100, 0, 255)         // 382.5 (extrapolation)
+ * mapRange(150, 0, 100, 0, 255, true)   // 255   (clamp)
+ */
+export function mapRange(
+  value: number,
+  inMin: number,
+  inMax: number,
+  outMin: number,
+  outMax: number,
+  clamp = false
+): number {
+  if (inMin === inMax) return outMin;
+  const t = (value - inMin) / (inMax - inMin);
+  const result = outMin + (outMax - outMin) * t;
+  if (!clamp) return result;
+  return outMin < outMax
+    ? Math.min(outMax, Math.max(outMin, result))
+    : Math.min(outMin, Math.max(outMax, result));
+}
+
 export function percentage(value: number, total: number, decimals = 0): number {
   if (total === 0) return 0;
   const raw = (value / total) * 100;

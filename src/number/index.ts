@@ -1,6 +1,6 @@
 export { clamp } from "./clamp";
 export { toOrdinal } from "./toOrdinal";
-export { lerp, normalize, percentage } from "./math";
+export { lerp, normalize, percentage, mapRange } from "./math";
 export { formatNumber } from "./formatNumber";
 export { randomInt } from "./randomInt";
 export { range } from "./range";

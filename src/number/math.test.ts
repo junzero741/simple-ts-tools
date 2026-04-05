@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lerp, normalize, percentage } from "./math";
+import { lerp, mapRange, normalize, percentage } from "./math";
 
 describe("lerp", () => {
   it("t=0이면 start를 반환한다", () => {
@@ -105,5 +105,116 @@ describe("percentage", () => {
     const done = 37;
     const total = 50;
     expect(percentage(done, total, 1)).toBe(74);
+  });
+});
+
+describe("mapRange", () => {
+  describe("기본 매핑", () => {
+    it("[0,100] → [0,800] 중간값", () => {
+      expect(mapRange(50, 0, 100, 0, 800)).toBe(400);
+    });
+
+    it("입력 범위의 시작 → 출력 범위의 시작", () => {
+      expect(mapRange(0, 0, 100, 0, 255)).toBe(0);
+    });
+
+    it("입력 범위의 끝 → 출력 범위의 끝", () => {
+      expect(mapRange(100, 0, 100, 0, 255)).toBe(255);
+    });
+
+    it("온도 변환: 섭씨 → 화씨", () => {
+      expect(mapRange(0, 0, 100, 32, 212)).toBe(32);
+      expect(mapRange(100, 0, 100, 32, 212)).toBe(212);
+      expect(mapRange(50, 0, 100, 32, 212)).toBe(122);
+    });
+
+    it("슬라이더 비율(0~1) → 볼륨(0~100)", () => {
+      expect(mapRange(0.7, 0, 1, 0, 100)).toBe(70);
+      expect(mapRange(0, 0, 1, 0, 100)).toBe(0);
+      expect(mapRange(1, 0, 1, 0, 100)).toBe(100);
+    });
+  });
+
+  describe("범위 초과 (extrapolation)", () => {
+    it("입력이 inMax를 넘으면 extrapolation된다", () => {
+      expect(mapRange(150, 0, 100, 0, 255)).toBeCloseTo(382.5);
+    });
+
+    it("입력이 inMin보다 작으면 extrapolation된다", () => {
+      expect(mapRange(-50, 0, 100, 0, 255)).toBeCloseTo(-127.5);
+    });
+  });
+
+  describe("clamp 옵션", () => {
+    it("clamp:true 이면 결과가 [outMin, outMax]를 벗어나지 않는다", () => {
+      expect(mapRange(150, 0, 100, 0, 255, true)).toBe(255);
+      expect(mapRange(-50, 0, 100, 0, 255, true)).toBe(0);
+    });
+
+    it("clamp:true, 범위 내 값은 그대로 반환한다", () => {
+      expect(mapRange(50, 0, 100, 0, 255, true)).toBeCloseTo(127.5);
+    });
+
+    it("역방향 출력 범위에서도 clamp가 동작한다", () => {
+      // outMin=255, outMax=0 (내림차순)
+      expect(mapRange(150, 0, 100, 255, 0, true)).toBe(0);
+      expect(mapRange(-50, 0, 100, 255, 0, true)).toBe(255);
+    });
+  });
+
+  describe("엣지 케이스", () => {
+    it("inMin === inMax 이면 outMin을 반환한다 (division by zero 방지)", () => {
+      expect(mapRange(50, 100, 100, 0, 255)).toBe(0);
+    });
+
+    it("역방향 입력 범위도 지원한다 (inMax < inMin)", () => {
+      // [100,0] → [0,255]: 값 100이 시작, 0이 끝
+      expect(mapRange(100, 100, 0, 0, 255)).toBe(0);
+      expect(mapRange(0, 100, 0, 0, 255)).toBe(255);
+    });
+
+    it("역방향 출력 범위도 지원한다", () => {
+      // 오디오 레벨 반전: 0dB=0%, -60dB=100%
+      expect(mapRange(0, 0, -60, 0, 100)).toBe(0);
+      expect(mapRange(-60, 0, -60, 0, 100)).toBe(100);
+      expect(mapRange(-30, 0, -60, 0, 100)).toBe(50);
+    });
+  });
+
+  describe("normalize + lerp와의 동치 관계", () => {
+    it("mapRange(v, a, b, c, d) === lerp(c, d, normalize(v, a, b))", () => {
+      const v = 37, a = 10, b = 90, c = -100, d = 200;
+      const viaCompose = lerp(c, d, normalize(v, a, b));
+      expect(mapRange(v, a, b, c, d)).toBeCloseTo(viaCompose);
+    });
+  });
+
+  describe("실사용 시나리오", () => {
+    it("데이터 시각화 — 데이터 값 → 차트 픽셀 좌표", () => {
+      const data = [0, 25, 50, 75, 100];
+      const chartWidth = 600;
+      const pixels = data.map(v => mapRange(v, 0, 100, 0, chartWidth));
+      expect(pixels).toEqual([0, 150, 300, 450, 600]);
+    });
+
+    it("게임 — 체력(0~100)을 색상 채널(255→0)으로 매핑", () => {
+      // 100% 체력: green(0 → 0), 0% 체력: red(255 → 255)
+      const hp = 60;
+      const red   = Math.round(mapRange(hp, 100, 0, 0, 255, true)); // 낮을수록 빨강
+      const green = Math.round(mapRange(hp, 0, 100, 0, 255, true)); // 높을수록 초록
+      expect(red).toBe(102);
+      expect(green).toBe(153);
+    });
+
+    it("배열에 일괄 적용 — 점수 분포 정규화", () => {
+      const scores = [40, 55, 70, 85, 95];
+      const minScore = Math.min(...scores);
+      const maxScore = Math.max(...scores);
+      const normalized = scores.map(s =>
+        Math.round(mapRange(s, minScore, maxScore, 0, 100))
+      );
+      expect(normalized[0]).toBe(0);
+      expect(normalized[normalized.length - 1]).toBe(100);
+    });
   });
 });

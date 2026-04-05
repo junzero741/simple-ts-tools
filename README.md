@@ -955,6 +955,7 @@ isObject(new Date()); // false — 인스턴스는 제외
 | `formatNumber` | `formatNumber(value: number, options?): string` | 천단위 구분·소수점·통화·compact 포맷 |
 | `lerp` | `lerp(start: number, end: number, t: number): number` | 두 값 사이의 선형 보간 (t=0→start, t=1→end) |
 | `normalize` | `normalize(value: number, min: number, max: number, clamp?: boolean): number` | [min, max] → [0, 1] 정규화 |
+| `mapRange` | `mapRange(value, inMin, inMax, outMin, outMax, clamp?): number` | 임의 범위 간 선형 매핑. `normalize + lerp`의 합성. 역방향·clamp 지원 |
 | `percentage` | `percentage(value: number, total: number, decimals?: number): number` | value가 total에서 차지하는 백분율 |
 | `randomInt` | `randomInt(min: number, max: number): number` | [min, max] 범위의 정수 난수 (양 끝 포함) |
 | `range` | `range(start: number, end: number, step?: number): number[]` | [start, end) 범위의 숫자 배열 생성 |
@@ -1013,6 +1014,27 @@ percentage(10, 0);              // 0   ← total=0 안전 처리
 // 실사용: 업로드 진행률
 const progress = percentage(uploadedBytes, totalBytes, 1);
 // "74.5%"
+
+// mapRange — 임의 두 범위 간 선형 매핑 (normalize + lerp의 합성)
+// mapRange(v, inMin, inMax, outMin, outMax)
+mapRange(50, 0, 100, 0, 800)        // 400  — 데이터값 → 픽셀 좌표
+mapRange(0.7, 0, 1, 0, 100)         // 70   — 슬라이더(0~1) → 볼륨(0~100)
+mapRange(100, 0, 100, 32, 212)      // 212  — 섭씨 → 화씨
+mapRange(0, 0, 100, 32, 212)        // 32
+
+// 역방향 범위 지원
+mapRange(-30, 0, -60, 0, 100)       // 50   — 오디오 dB(0~-60dB) → %(0~100%)
+
+// clamp: true — 범위 초과 방지
+mapRange(150, 0, 100, 0, 255, true) // 255  (extrapolation 없이 출력 범위로 제한)
+mapRange(-50, 0, 100, 0, 255, true) // 0
+
+// normalize + lerp와 동치
+mapRange(v, a, b, c, d)             // === lerp(c, d, normalize(v, a, b))
+
+// 데이터 시각화 — 데이터 배열을 픽셀 좌표로 일괄 변환
+const min = Math.min(...data), max = Math.max(...data);
+const pixels = data.map(v => mapRange(v, min, max, 0, chartWidth));
 
 // 영어 서수 — 리더보드, 순위, 날짜 표시
 toOrdinal(1);    // "1st"
