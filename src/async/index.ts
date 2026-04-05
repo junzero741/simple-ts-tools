@@ -66,3 +66,5 @@ export { createCircuitBreakerGroup } from "./circuitBreakerGroup";
 export type { CircuitBreakerGroup, BreakerOptions, BreakerStats } from "./circuitBreakerGroup";
 export { createGracefulShutdown } from "./gracefulShutdown";
 export type { GracefulShutdown, ShutdownReport, ShutdownOptions } from "./gracefulShutdown";
+export { createBulkhead } from "./bulkhead";
+export type { Bulkhead, PartitionConfig, PartitionStats } from "./bulkhead";
