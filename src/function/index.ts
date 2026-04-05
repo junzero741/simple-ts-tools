@@ -24,3 +24,5 @@ export type { Memo } from "./memo";
 export { createPipeline } from "./pipeline";
 export type { Pipeline, PipelineResult, PipelineError, PipelineOutcome } from "./pipeline";
 export type { Middleware, MiddlewareFn } from "./middleware";
+export { createFeatureFlags } from "./featureFlags";
+export type { FeatureFlags, FlagValue } from "./featureFlags";
