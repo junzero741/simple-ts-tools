@@ -36,3 +36,5 @@ export { createDisposable, using } from "./disposable";
 export type { Disposable, CleanupFn } from "./disposable";
 export { createChannel, select } from "./channel";
 export type { Channel, SelectResult } from "./channel";
+export { createTaskRunner } from "./taskRunner";
+export type { TaskRunner, TaskRunnerResult } from "./taskRunner";
