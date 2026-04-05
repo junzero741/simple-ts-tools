@@ -16,3 +16,13 @@ export { levenshteinDistance, similarity, fuzzyMatch, fuzzySearch } from "./fuzz
 export type { FuzzyResult, FuzzySearchOptions } from "./fuzzy";
 export { render } from "./template.engine";
 export type { RenderOptions, FilterFn } from "./template.engine";
+export {
+  sanitizeFilename,
+  stripTags,
+  removeControlChars,
+  escapeRegExp,
+  removeZeroWidth,
+  limitLength,
+  normalizeWhitespace,
+  escapeSql,
+} from "./sanitize";
