@@ -1,4 +1,5 @@
 export { camelToKebab } from "./camelToKebab";
+export { truncateWords, wordCount, words } from "./words";
 export { mask, maskCard, maskEmail, maskPhone } from "./mask";
 export { slugify } from "./slugify";
 export { camelToSnake, snakeToCamel } from "./snakeCase";

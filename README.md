@@ -16,6 +16,10 @@ pnpm add simple-ts-tools
 |------|----------|------|
 | `chunk` | `chunk<T>(arr: T[], size: number): T[][]` | 배열을 n개씩 나눈다 |
 | `compact` | `compact<T>(arr: (T \| null \| undefined \| false \| 0 \| "")[]): T[]` | falsy 값 제거 (타입에서도 제외) |
+| `first` | `first<T>(arr: T[]): T \| undefined` | 첫 번째 요소 반환 (빈 배열 → `undefined`) |
+| `last` | `last<T>(arr: T[]): T \| undefined` | 마지막 요소 반환 (빈 배열 → `undefined`) |
+| `move` | `move<T>(arr: T[], from: number, to: number): T[]` | 요소를 from → to 인덱스로 이동 (비파괴) |
+| `toggle` | `toggle<T>(arr: T[], item: T, keyFn?): T[]` | 없으면 추가, 있으면 제거 (비파괴) |
 | `countBy` | `countBy<T, K>(arr: T[], keyFn: (item: T) => K): Partial<Record<K, number>>` | 키 기준으로 등장 횟수 집계 |
 | `difference` | `difference<T>(a: T[], b: T[], keyFn?): T[]` | a에만 있는 요소 반환 (차집합) |
 | `keyBy` | `keyBy<T, K>(arr: T[], keyFn: (item: T) => K): Record<K, T>` | 배열을 키 함수 기준 Record로 변환 (O(1) 조회용) |
@@ -139,6 +143,26 @@ sample(["A", "B", "C", "D"]);      // "B" (무작위)
 // 중복 없이 n개 선택
 sampleSize([1, 2, 3, 4, 5], 3);    // [4, 1, 3] (무작위 3개)
 sampleSize(questions, 5);           // 시험 문제 랜덤 출제
+
+// 안전한 first / last (빈 배열에서도 throw 없음)
+first([1, 2, 3]);   // 1
+last([1, 2, 3]);    // 3
+first([]);          // undefined
+last([]);           // undefined
+
+// drag-and-drop 순서 변경 — 비파괴
+const tasks = ["Task A", "Task B", "Task C", "Task D"];
+move(tasks, 2, 0);  // ["Task C", "Task A", "Task B", "Task D"]
+move(tasks, 0, 3);  // ["Task B", "Task C", "Task D", "Task A"]
+
+// 멀티셀렉트 토글 — 있으면 제거, 없으면 추가
+toggle(["react", "typescript"], "vue");     // ["react", "typescript", "vue"]
+toggle(["react", "typescript"], "react");   // ["typescript"]
+
+// 객체 배열 토글 — keyFn으로 비교 기준 지정
+const selected = [{ id: 1 }, { id: 2 }];
+toggle(selected, { id: 2 }, x => x.id);  // [{ id: 1 }]      (제거)
+toggle(selected, { id: 3 }, x => x.id);  // [..., { id: 3 }] (추가)
 ```
 
 ---
@@ -736,6 +760,66 @@ const users = mapResult(data, us => us.filter(u => u.active));
 
 ---
 
+### storage
+
+JSON 직렬화·TTL·네임스페이스를 지원하는 타입 안전 localStorage/sessionStorage 래퍼.
+SSR/Node 환경에서 storage 접근 불가 시 no-op으로 동작한다 (throw 없음).
+
+| API | 설명 |
+|-----|------|
+| `createStorage(options?)` | TypedStorage 인스턴스 생성 |
+| `store.set(key, value, options?)` | JSON 직렬화 저장. `ttl` (ms) 옵션으로 만료 설정 |
+| `store.get<T>(key)` | 역직렬화 반환. 없거나 만료됐으면 `null` |
+| `store.has(key)` | 유효한 항목이 존재하면 `true` |
+| `store.remove(key)` | 항목 삭제 |
+| `store.clear()` | prefix 항목 전체 삭제 (prefix 없으면 전체 초기화) |
+| `store.keys()` | 현재 prefix의 모든 raw key 반환 |
+
+**StorageOptions**
+
+| 옵션 | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `type` | `"local" \| "session"` | `"local"` | localStorage 또는 sessionStorage |
+| `prefix` | `string` | — | 모든 키에 자동으로 붙는 네임스페이스 (`"prefix:key"`) |
+
+```ts
+import { createStorage } from "simple-ts-tools";
+
+// 기본 — localStorage, 네임스페이스 없음
+const store = createStorage();
+store.set("theme", "dark");
+store.get<string>("theme");   // "dark"
+
+// TTL — 1시간 후 자동 만료
+store.set("authToken", token, { ttl: 60 * 60 * 1000 });
+
+// 네임스페이스 — 앱별 키 충돌 방지
+const appStore = createStorage({ prefix: "myapp" });
+appStore.set("user", { id: 1, name: "Alice" });
+// localStorage에는 "myapp:user"로 저장됨
+
+// 타입 안전 get
+const user = appStore.get<{ id: number; name: string }>("user");
+user?.name; // "Alice"
+
+// sessionStorage — 탭/창 닫으면 자동 삭제
+const sessionStore = createStorage({ type: "session", prefix: "cart" });
+sessionStore.set("items", cartItems);
+
+// has / remove
+appStore.has("user");     // true
+appStore.remove("user");
+appStore.has("user");     // false
+
+// 현재 prefix의 모든 키
+appStore.keys();          // ["user", "theme", ...]
+
+// prefix 범위 내 전체 삭제
+appStore.clear();         // "myapp:*" 항목만 삭제, 다른 앱 키 유지
+```
+
+---
+
 ### phone
 
 | 함수 | 시그니처 | 설명 |
@@ -769,6 +853,9 @@ formatPhoneNumber("0212345678");  // "02-123-4567" (8자리 지역번호 형식)
 | `maskEmail` | `maskEmail(email: string): string` | 이메일 local 파트 앞 2자 이후 마스킹 |
 | `maskCard` | `maskCard(cardNumber: string): string` | 카드번호 마지막 4자리만 표시, 4자리씩 하이픈 구분 |
 | `maskPhone` | `maskPhone(phone: string): string` | 전화번호 중간 자리 마스킹 (한국 형식) |
+| `wordCount` | `wordCount(str: string): number` | 단어 수 반환 (공백 기준, 연속 공백 정규화) |
+| `words` | `words(str: string): string[]` | 문자열을 단어 배열로 분리 |
+| `truncateWords` | `truncateWords(str: string, maxWords: number, suffix?: string): string` | 단어 수 기준으로 잘라냄 (기본 suffix: "…") |
 
 ```ts
 import { isEmpty, truncate, capitalize } from "simple-ts-tools";
@@ -866,6 +953,26 @@ maskCard("1234-5678-9012-3456");       // "****-****-****-3456"
 maskPhone("01012345678");             // "010-****-5678"
 maskPhone("010-1234-5678");           // "010-****-5678"
 maskPhone("0212345678");              // "02-****-5678"
+
+// 단어 수 처리 — 리치 텍스트 에디터, 폼 유효성 검사
+wordCount("Hello World");          // 2
+wordCount("  Hello   World  ");    // 2  (연속 공백 정규화)
+wordCount("");                     // 0
+
+words("React TypeScript Next.js"); // ["React", "TypeScript", "Next.js"]
+
+// truncateWords — 문자 수가 아닌 단어 수 기준으로 잘라냄
+// (truncate는 단어 중간에서 잘릴 수 있는 문제를 이 함수로 해결)
+truncateWords("Hello World Foo Bar Baz", 3);           // "Hello World Foo…"
+truncateWords("React TypeScript Next.js", 10);          // "React TypeScript Next.js" (초과 없음)
+truncateWords("Hello World Foo", 2, " [더 보기]");       // "Hello World [더 보기]"
+
+// 실사용: 블로그 카드 미리보기
+const preview = truncateWords(article.body, 20);
+// 최대 20단어로 미리보기, 단어 중간에서 잘리지 않음
+
+// 실사용: 트위터 스타일 글자 수 제한 표시
+const remaining = 280 - wordCount(input) * 5; // 대략적 계산용
 ```
 
 ---

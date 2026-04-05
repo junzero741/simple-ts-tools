@@ -1,4 +1,5 @@
 export { chunk } from "./chunk";
+export { first, last, move, toggle } from "./extras";
 export { compact } from "./compact";
 export { countBy } from "./countBy";
 export { difference } from "./difference";
