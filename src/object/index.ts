@@ -30,3 +30,5 @@ export {
   renameKeys, selectKeys, zipObject, indexBy,
   mapValuesDeep, mergeWith, keysToSnakeCase, keysToCamelCase, countValues,
 } from "./transform";
+export { merge3, applyChanges } from "./diff3way";
+export type { MergeResult, MergeConflict, Merge3Options, ConflictStrategy } from "./diff3way";
