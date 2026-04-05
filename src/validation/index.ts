@@ -16,3 +16,5 @@ export {
 export type { Rule, Schema as ValidationSchema, ValidationResult } from "./validation";
 export { s } from "./schema";
 export type { Schema, ParseResult, SchemaError } from "./schema";
+export { stringSanitizer, numberSanitizer } from "./sanitizeInput";
+export type { Sanitizer, StringSanitizer, NumberSanitizer } from "./sanitizeInput";
