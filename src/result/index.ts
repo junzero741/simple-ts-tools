@@ -73,3 +73,6 @@ export function mapResult<T, U, E>(
 export function unwrapOr<T, E>(result: Result<T, E>, fallback: T): T {
   return result.ok ? result.value : fallback;
 }
+
+export { some, none, fromNullable, tryOption, firstSome, allSome } from "./option";
+export type { Option } from "./option";
