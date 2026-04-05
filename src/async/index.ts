@@ -18,6 +18,8 @@ export type { Limiter } from "./pLimit";
 export { createRateLimiter } from "./rateLimit";
 export type { RateLimiter, RateLimiterOptions } from "./rateLimit";
 export { createCircuitBreaker, CircuitOpenError } from "./circuitBreaker";
+export { createAsyncQueue } from "./asyncQueue";
+export type { AsyncQueue, AsyncQueueOptions } from "./asyncQueue";
 export type {
   CircuitBreaker,
   CircuitBreakerOptions,

@@ -337,6 +337,7 @@ arr.slice(sortedIndex(arr, 3), sortedLastIndex(arr, 3)); // [3, 3, 3]
 | `pLimit` | `pLimit(concurrency): Limiter` | 동시에 실행할 비동기 작업 수를 제한하는 concurrency limiter — `activeCount`/`pendingCount`/`clearQueue()` 제공 |
 | `createRateLimiter` | `createRateLimiter(options): RateLimiter` | 토큰 버킷 기반 시간당 호출 수 제한 — `acquire()`/`tryAcquire()`/`reset()` 제공 |
 | `createCircuitBreaker` | `createCircuitBreaker(fn, options?): CircuitBreaker` | 서킷 브레이커 — 연속 실패 시 OPEN 전환 후 복구 탐색 (CLOSED → OPEN → HALF_OPEN) |
+| `createAsyncQueue` | `createAsyncQueue<T>(options?): AsyncQueue<T>` | 비동기 producer/consumer 큐 — backpressure, `for await...of`, 멀티 consumer 지원 |
 
 **MemoizeAsyncOptions**
 
@@ -345,6 +346,12 @@ arr.slice(sortedIndex(arr, 3), sortedLastIndex(arr, 3)); // [3, 3, 3]
 | `ttl` | `number` | — | 캐시 만료 시간 (ms). 미지정 시 영구 캐시 |
 | `maxSize` | `number` | — | 최대 캐시 항목 수. 초과 시 FIFO 제거 |
 | `keyFn` | `(...args) => string` | `JSON.stringify` | 캐시 키 생성 함수 |
+
+**AsyncQueueOptions**
+
+| 옵션 | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `capacity` | `number` | 무제한 | 버퍼 최대 크기. 초과 시 `push()`가 소비될 때까지 대기한다 (backpressure) |
 
 **CircuitBreakerOptions**
 
@@ -568,6 +575,50 @@ console.log(limit.pendingCount); // 대기 중인 작업 수
 
 // 긴급 취소 — 남은 큐 비우기 (실행 중인 작업은 그대로 완료)
 limit.clearQueue();
+```
+
+```ts
+import { createAsyncQueue } from "simple-ts-tools";
+
+// 워커 패턴 — producer와 consumer를 독립적으로 실행
+const queue = createAsyncQueue<Buffer>({ capacity: 10 });
+
+// Producer (별도 async context에서 실행)
+(async () => {
+  for (const chunk of readChunks()) {
+    await queue.push(chunk);  // capacity=10 초과 시 자동 backpressure
+  }
+  queue.close();
+})();
+
+// Consumer — for await...of로 큐 닫힐 때까지 자동 소비
+for await (const chunk of queue) {
+  await processChunk(chunk);
+}
+
+// 멀티 consumer — 4개 워커가 동일 큐를 경쟁 소비
+const jobQueue = createAsyncQueue<Job>();
+const workers = Array.from({ length: 4 }, () =>
+  (async () => { for await (const job of jobQueue) await processJob(job); })()
+);
+await Promise.all(workers);
+
+// 파이프라인 — 큐를 transform stage로 연결
+const rawQ = createAsyncQueue<string>({ capacity: 50 });
+const parsedQ = createAsyncQueue<ParsedItem>({ capacity: 50 });
+
+// Stage 1: raw → parsed
+(async () => {
+  for await (const line of rawQ) await parsedQ.push(parse(line));
+  parsedQ.close();
+})();
+
+// Stage 2: parsed → DB
+for await (const item of parsedQ) await db.insert(item);
+
+// 상태 확인
+console.log(queue.size);   // 버퍼에 있는 항목 수
+console.log(queue.closed); // 큐 닫힘 여부
 ```
 
 ```ts
