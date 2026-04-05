@@ -628,6 +628,7 @@ emitter
 | `pipe` | `pipe(value, ...fns): T` | 값을 함수들에 왼쪽→오른쪽으로 순서대로 통과 (최대 8단계 타입 안전) |
 | `throttle` | `throttle<T>(fn: T, interval: number): T & { cancel() }` | interval ms 내 최대 한 번 실행 (leading-edge + trailing) |
 | `negate` | `negate<T>(fn: (...args: T) => boolean): (...args: T) => boolean` | 술어 함수의 결과를 반전시킨 새 함수 반환 (`!fn(...)`) |
+| `tap` | `tap<T>(fn: (value: T) => void): (value: T) => T` | pipe/compose 체인에서 값을 변경하지 않고 부수 효과 실행 (로깅·분석·디버깅) |
 | `createStateMachine` | `createStateMachine<S, E>(config): StateMachine<S, E>` | 타입 안전 유한 상태 기계 — 정의된 전이만 허용, 허용 안 된 이벤트는 무시 |
 
 ```ts
@@ -760,6 +761,27 @@ const processItems = (items: string[]) =>
     xs => xs.filter(negate(s => s.length === 0)),  // 빈 문자열 제거
     xs => unique(xs),                               // 중복 제거
   );
+
+// tap — pipe/compose 체인에서 부수 효과만 실행, 값은 그대로 통과
+const processOrder = pipe(
+  order,
+  tap(o => logger.info("order received", { id: o.id })),
+  validateOrder,
+  tap(o => analytics.track("order.validated", { id: o.id })),
+  chargePayment,
+  tap(o => sendConfirmation(o)),
+);
+
+// 디버깅용 단독 사용
+[1, 2, 3].map(tap(console.log)); // 각 값을 출력하면서 배열은 그대로 반환
+
+// pipe 중간 관찰
+const result = pipe(
+  rawUsers,
+  tap(xs => console.log("원본:", xs.length)),
+  xs => xs.filter(u => u.active),
+  tap(xs => console.log("활성 유저:", xs.length)),
+);
 ```
 
 #### createStateMachine
