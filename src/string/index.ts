@@ -11,3 +11,4 @@ export { kebabToCamel } from "./kebabToCamel";
 export { template } from "./template";
 export { truncate } from "./truncate";
 export { pluralize, autoPlural } from "./pluralize";
+export { toCamelCase, toPascalCase, toTitleCase, toScreamingSnake } from "./changeCase";

@@ -1327,6 +1327,10 @@ formatPhoneNumber("0212345678");  // "02-123-4567" (8자리 지역번호 형식)
 | `truncateWords` | `truncateWords(str: string, maxWords: number, suffix?: string): string` | 단어 수 기준으로 잘라냄 (기본 suffix: "…") |
 | `pluralize` | `pluralize(count, singular, plural?, options?): string` | 영어 복수형 자동 처리 (불규칙형은 plural로 지정) |
 | `autoPlural` | `autoPlural(word: string): string` | 영어 복수형 규칙 적용 (s/es/ies) — pluralize의 내부 규칙 직접 사용 시 |
+| `toCamelCase` | `toCamelCase(str: string): string` | 어떤 형식이든 camelCase로 변환 (공백·하이픈·언더스코어·PascalCase·약어 모두 처리) |
+| `toPascalCase` | `toPascalCase(str: string): string` | 어떤 형식이든 PascalCase로 변환 |
+| `toTitleCase` | `toTitleCase(str: string): string` | 어떤 형식이든 Title Case로 변환 (각 단어 첫 글자 대문자, 공백 구분) |
+| `toScreamingSnake` | `toScreamingSnake(str: string): string` | 어떤 형식이든 SCREAMING_SNAKE_CASE로 변환 |
 
 ```ts
 import { isEmpty, truncate, capitalize } from "simple-ts-tools";
@@ -1357,6 +1361,38 @@ camelToSnake("XMLParser");           // "xml_parser"      ← 약어 처리
 camelToSnake("getHTTPSResponse");    // "get_https_response"
 snakeToCamel("background_color");    // "backgroundColor"
 snakeToCamel(camelToSnake("myProp")); // "myProp" (왕복 가능)
+
+// 범용 케이스 변환 — 입력 형식 무관 (공백·하이픈·언더스코어·camel·Pascal 모두 처리)
+// 기존 함수(kebabToCamel, snakeToCamel)는 특정 형식만 처리하지만,
+// 이 함수들은 어떤 형식이든 받아서 변환한다.
+
+toCamelCase("hello world")    // "helloWorld"
+toCamelCase("hello-world")    // "helloWorld"
+toCamelCase("hello_world")    // "helloWorld"
+toCamelCase("HelloWorld")     // "helloWorld"
+toCamelCase("XMLParser")      // "xmlParser"  ← 약어 처리
+
+toPascalCase("hello world")   // "HelloWorld"
+toPascalCase("hello-world")   // "HelloWorld"
+toPascalCase("hello_world")   // "HelloWorld"
+toPascalCase("my-button")     // "MyButton"   ← 컴포넌트명 생성
+
+toTitleCase("hello world")    // "Hello World"
+toTitleCase("hello-world")    // "Hello World"
+toTitleCase("helloWorld")     // "Hello World"
+toTitleCase("USER_ROLE_ADMIN") // "User Role Admin"  ← 상수 → 표시 레이블
+
+toScreamingSnake("hello world")  // "HELLO_WORLD"
+toScreamingSnake("helloWorld")   // "HELLO_WORLD"
+toScreamingSnake("maxRetryCount") // "MAX_RETRY_COUNT"
+
+// 실사용: API 응답 필드명 → JS 프로퍼티명 일괄 변환
+const apiFields = ["user_id", "first_name", "created_at"];
+apiFields.map(toCamelCase); // ["userId", "firstName", "createdAt"]
+
+// 동일한 의미의 다른 형식을 하나로 정규화
+["user name", "user-name", "user_name", "UserName"].map(toCamelCase);
+// 모두 "userName" — 입력 형식 무관 멱등성
 
 // 파일 크기를 사람이 읽기 좋은 단위로 표시
 formatBytes(0);               // "0 B"
