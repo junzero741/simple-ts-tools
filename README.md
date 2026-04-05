@@ -39,6 +39,12 @@ pnpm add simple-ts-tools
 | `tuple` | `tuple<T extends unknown[]>(...args: T): T` | 인자들을 튜플 타입으로 추론 |
 | `unique` | `unique<T>(arr: T[], keyFn?: (item: T) => unknown): T[]` | 중복 제거 (첫 등장 순서 유지) |
 | `zip` | `zip<T extends unknown[][]>(...arrays: T): [...][]` | 여러 배열을 인덱스 기준으로 묶음 (최단 길이 기준) |
+| `take` | `take<T>(arr: T[], n: number): T[]` | 앞에서 n개 반환 |
+| `drop` | `drop<T>(arr: T[], n: number): T[]` | 앞에서 n개 제거한 나머지 반환 |
+| `takeLast` | `takeLast<T>(arr: T[], n: number): T[]` | 뒤에서 n개 반환 |
+| `dropLast` | `dropLast<T>(arr: T[], n: number): T[]` | 뒤에서 n개 제거한 나머지 반환 |
+| `takeWhile` | `takeWhile<T>(arr: T[], predicate: (item: T) => boolean): T[]` | predicate가 true인 동안 앞에서부터 수집 |
+| `dropWhile` | `dropWhile<T>(arr: T[], predicate: (item: T) => boolean): T[]` | predicate가 true인 동안 앞에서부터 건너뜀 |
 
 ```ts
 import { chunk, compact, flatten, groupBy, tuple, zip } from "simple-ts-tools";
@@ -164,6 +170,28 @@ toggle(["react", "typescript"], "react");   // ["typescript"]
 const selected = [{ id: 1 }, { id: 2 }];
 toggle(selected, { id: 2 }, x => x.id);  // [{ id: 1 }]      (제거)
 toggle(selected, { id: 3 }, x => x.id);  // [..., { id: 3 }] (추가)
+
+// take / drop — 앞에서 자르기
+take([1, 2, 3, 4, 5], 3);    // [1, 2, 3]
+drop([1, 2, 3, 4, 5], 2);    // [3, 4, 5]
+takeLast([1, 2, 3, 4, 5], 2); // [4, 5]
+dropLast([1, 2, 3, 4, 5], 2); // [1, 2, 3]
+
+// takeWhile / dropWhile — 조건이 만족되는 동안
+takeWhile([1, 2, 3, 4, 1], x => x < 3);  // [1, 2]
+dropWhile([1, 2, 3, 4, 1], x => x < 3);  // [3, 4, 1]
+
+// 실사용: 조건 충족 전까지의 로그 수집
+const errorsBeforeTimeout = takeWhile(logs, log => log.level !== "fatal");
+
+// 초기 로딩 스피너 이후의 이벤트만 처리
+const eventsAfterReady = dropWhile(events, e => e.type !== "ready");
+
+// 실사용: 최신 5개 알림만 표시
+take(notifications.reverse(), 5);
+
+// 첫 번째 페이지를 제외하고 나머지 로드
+drop(allPages, 1);
 
 // 페이지네이션 — 리스트 UI에서 매번 직접 계산하던 것을 한 번에
 const posts = Array.from({ length: 53 }, (_, i) => ({ id: i + 1 }));
