@@ -68,3 +68,5 @@ export { createGracefulShutdown } from "./gracefulShutdown";
 export type { GracefulShutdown, ShutdownReport, ShutdownOptions } from "./gracefulShutdown";
 export { createBulkhead } from "./bulkhead";
 export type { Bulkhead, PartitionConfig, PartitionStats } from "./bulkhead";
+export { createLoadBalancer } from "./loadBalancer";
+export type { LoadBalancer, LoadBalancerOptions, WeightedTarget, Strategy } from "./loadBalancer";
