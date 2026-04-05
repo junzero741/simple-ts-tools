@@ -18,3 +18,8 @@ export {
   timingSafeEqual,
 } from "./hash";
 export type { HashEncoding } from "./hash";
+export {
+  decodeJwt, isJwtExpired, getJwtExpiration,
+  getJwtTimeRemaining, getJwtClaim, createMockJwt,
+} from "./jwt";
+export type { DecodedJwt, JwtHeader, JwtPayload } from "./jwt";
