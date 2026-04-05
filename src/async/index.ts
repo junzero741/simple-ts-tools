@@ -62,3 +62,5 @@ export { createActor } from "./actor";
 export type { Actor } from "./actor";
 export { createHealthCheck } from "./healthCheck";
 export type { HealthCheck, HealthReport, CheckResult, CheckOptions } from "./healthCheck";
+export { createCircuitBreakerGroup } from "./circuitBreakerGroup";
+export type { CircuitBreakerGroup, BreakerOptions, BreakerStats } from "./circuitBreakerGroup";
