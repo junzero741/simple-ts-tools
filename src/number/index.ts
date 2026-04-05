@@ -8,3 +8,5 @@ export { round } from "./round";
 export { sum, mean, median, mode, variance, stddev } from "./statistics";
 export { formatCurrency, formatCompact, formatPercent, formatUnit, formatOrdinal, formatList } from "./intlFormat";
 export type { PercentOptions } from "./intlFormat";
+export { createTimeSeries } from "./timeSeries";
+export type { TimeSeries, TimeSeriesOptions } from "./timeSeries";
