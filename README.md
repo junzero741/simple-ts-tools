@@ -45,6 +45,7 @@ pnpm add simple-ts-tools
 | `unzip` | `unzip<T extends readonly unknown[]>(pairs: T[]): { [K in keyof T]: T[K][] }` | 튜플 배열 → 개별 배열들 (zip 역연산 / 행렬 전치) |
 | `zipWith` | `zipWith<A,B,R>(a: A[], b: B[], fn: (a:A,b:B)=>R): R[]` | zip + map 일괄 처리 — 두(또는 세) 배열을 결합 함수에 적용 |
 | `scan` | `scan<T, U>(arr: T[], initial: U, fn: (acc: U, item: T, index: number) => U): U[]` | 누적 reduce — 매 단계의 중간 값을 배열로 반환 (누적 합·잔액 추적 등) |
+| `orderBy` | `orderBy<T>(arr: T[], keys: KeyFn<T>[], orders?: Order[]): T[]` | 다중 키 정렬 — 키 우선순위 순서로 정렬, null/undefined는 항상 맨 뒤 (stable, 비파괴) |
 | `take` | `take<T>(arr: T[], n: number): T[]` | 앞에서 n개 반환 |
 | `drop` | `drop<T>(arr: T[], n: number): T[]` | 앞에서 n개 제거한 나머지 반환 |
 | `takeLast` | `takeLast<T>(arr: T[], n: number): T[]` | 뒤에서 n개 반환 |
@@ -108,6 +109,19 @@ const removed = difference(prev, next);               // 삭제된 항목
 sortBy(users, u => u.name);            // 이름 오름차순
 sortBy(users, u => u.name, "desc");    // 이름 내림차순
 sortBy(items, i => -i.price);          // 가격 내림차순 (부호 반전)
+
+// orderBy — 다중 키 정렬 (sortBy는 단일 키)
+// 점수 내림차순, 동점자는 이름 오름차순
+orderBy(players, [p => p.score, p => p.name], ["desc", "asc"]);
+
+// 부서 오름차순 → 직급 내림차순 → 이름 오름차순
+orderBy(employees, [e => e.dept, e => e.level, e => e.name], ["asc", "desc", "asc"]);
+
+// 할 일 — 우선순위 오름차순, 같으면 마감일 오름차순
+orderBy(tasks, [t => t.priority, t => t.dueDate]);
+
+// null/undefined는 방향 무관하게 항상 맨 뒤
+orderBy(items, [x => x.value]); // null이 있어도 안전
 
 // 배열 → Record 변환 (O(1) 조회)
 const users = [{ id: 1, name: "Alice" }, { id: 2, name: "Bob" }];
