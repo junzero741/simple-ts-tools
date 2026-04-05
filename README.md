@@ -39,6 +39,8 @@ pnpm add simple-ts-tools
 | `tuple` | `tuple<T extends unknown[]>(...args: T): T` | 인자들을 튜플 타입으로 추론 |
 | `unique` | `unique<T>(arr: T[], keyFn?: (item: T) => unknown): T[]` | 중복 제거 (첫 등장 순서 유지) |
 | `zip` | `zip<T extends unknown[][]>(...arrays: T): [...][]` | 여러 배열을 인덱스 기준으로 묶음 (최단 길이 기준) |
+| `windows` | `windows<T>(arr: T[], size: number, options?): T[][]` | 크기 size의 슬라이딩 윈도우 배열 (이동평균·n-gram 등) |
+| `pairwise` | `pairwise<T>(arr: T[]): [T, T][]` | 인접한 두 요소의 쌍 배열 (`windows(arr, 2)` 축약형) |
 | `take` | `take<T>(arr: T[], n: number): T[]` | 앞에서 n개 반환 |
 | `drop` | `drop<T>(arr: T[], n: number): T[]` | 앞에서 n개 제거한 나머지 반환 |
 | `takeLast` | `takeLast<T>(arr: T[], n: number): T[]` | 뒤에서 n개 반환 |
@@ -170,6 +172,36 @@ toggle(["react", "typescript"], "react");   // ["typescript"]
 const selected = [{ id: 1 }, { id: 2 }];
 toggle(selected, { id: 2 }, x => x.id);  // [{ id: 1 }]      (제거)
 toggle(selected, { id: 3 }, x => x.id);  // [..., { id: 3 }] (추가)
+
+// windows — 슬라이딩 윈도우 (chunk는 비겹침, windows는 겹침)
+windows([1, 2, 3, 4, 5], 3);
+// [[1,2,3], [2,3,4], [3,4,5]]
+
+windows([1, 2, 3, 4, 5], 3, { step: 2 });
+// [[1,2,3], [3,4,5]]
+
+// 이동평균 (3-period MA) — 차트, 시계열 스무딩
+const prices = [10, 12, 11, 14, 13, 15];
+const ma3 = windows(prices, 3).map(w => w.reduce((a, b) => a + b) / w.length);
+// [11, 12.33, 12.67, 14]
+
+// n-gram 생성 — 텍스트 분석, 검색 자동완성
+const tokens = ["I", "love", "TypeScript"];
+windows(tokens, 2).map(pair => pair.join(" "));
+// ["I love", "love TypeScript"]
+
+// 연속 이벤트 패턴 감지 — 퍼널 분석
+const events = ["view", "click", "view", "click", "purchase"];
+windows(events, 3).filter(w => w[2] === "purchase");
+// [["view", "click", "purchase"]]
+
+// pairwise — 인접 쌍 (windows(arr, 2) 축약)
+pairwise([100, 110, 105, 120]).map(([prev, curr]) =>
+  Math.round((curr - prev) / prev * 100)
+); // [10, -5, 14]  — 가격 변동률
+
+// 연속 이벤트 간 시간 간격
+pairwise(timestamps).map(([a, b]) => b - a);
 
 // take / drop — 앞에서 자르기
 take([1, 2, 3, 4, 5], 3);    // [1, 2, 3]

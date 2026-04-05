@@ -18,3 +18,4 @@ export { tuple } from "./tuple";
 export { unique } from "./unique";
 export { zip } from "./zip";
 export { take, drop, takeWhile, dropWhile, takeLast, dropLast } from "./slice";
+export { windows, pairwise } from "./windows";
