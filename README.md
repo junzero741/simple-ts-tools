@@ -293,6 +293,7 @@ const { data, totalPages, hasNext, hasPrev } = paginate(allItems, currentPage, 2
 | `retry` | `retry<T>(fn: () => Promise<T>, options?: RetryOptions): Promise<T>` | 실패 시 지수 백오프로 재시도 |
 | `sleep` | `sleep(ms: number): Promise<void>` | 지정한 시간(ms)만큼 대기 |
 | `timeout` | `timeout<T>(promise: Promise<T>, ms: number, message?: string): Promise<T>` | 타임아웃 초과 시 reject |
+| `createBatch` | `createBatch<K, V>(batchFn, options?): Batcher<K, V>` | DataLoader 패턴 — 같은 틱의 `load(key)` 호출을 자동으로 묶어 단일 배치 함수로 처리 |
 
 **MemoizeAsyncOptions**
 
@@ -428,6 +429,52 @@ const getPermissions = memoizeAsync(fetchPermissions, {
   keyFn: (user) => user.id,
   ttl: 5 * 60_000,
 });
+```
+
+**BatchOptions**
+
+| 옵션 | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `maxSize` | `number` | `100` | 한 배치의 최대 키 수. 초과 시 즉시 플러시 |
+| `maxWait` | `number` | `0` | 배치 수집 대기 시간(ms). 0이면 같은 틱 마이크로태스크에서 플러시 |
+
+`batchFn`은 반드시 **입력 keys 배열과 동일한 길이·순서**의 결과(`V | Error`) 배열을 반환해야 한다.
+개별 항목에 `Error` 인스턴스를 반환하면 해당 키만 reject된다.
+
+```ts
+import { createBatch } from "simple-ts-tools";
+
+// N+1 쿼리 방지 — 여러 곳에서 각각 load()해도 DB 호출은 1번
+const userLoader = createBatch(async (ids: number[]) => {
+  const users = await db.users.findMany({ where: { id: { in: ids } } });
+  // 반드시 ids와 동일한 길이·순서로 반환
+  return ids.map(id => users.find(u => u.id === id) ?? new Error(`User ${id} not found`));
+});
+
+// 세 컴포넌트가 독립적으로 요청 → batchFn 호출은 1번
+const [alice, bob, charlie] = await Promise.all([
+  userLoader.load(1),
+  userLoader.load(2),
+  userLoader.load(3),
+]);
+
+// 특정 키가 없으면 해당 Promise만 reject, 나머지는 정상 처리
+const results = await Promise.allSettled([
+  userLoader.load(1),  // fulfilled
+  userLoader.load(99), // rejected (not found)
+]);
+
+// maxSize — API rate limit 대응: 50개씩 묶어 요청
+const priceLoader = createBatch(
+  async (symbols: string[]) => fetchPrices(symbols),
+  { maxSize: 50 }
+);
+
+// maxWait — 10ms 동안 키를 모은 뒤 배치 처리 (다른 틱의 호출도 묶기)
+const logLoader = createBatch(
+  async (ids: string[]) => bulkFetchLogs(ids),
+  { maxWait: 10 }
+);
 ```
 
 ---
