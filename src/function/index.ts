@@ -12,4 +12,5 @@ export { pipeAsync } from "./pipeAsync";
 export { createStateMachine } from "./stateMachine";
 export type { StateMachineConfig, StateMachine } from "./stateMachine";
 export { createMiddleware } from "./middleware";
+export { match } from "./match";
 export type { Middleware, MiddlewareFn } from "./middleware";
