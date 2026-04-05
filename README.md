@@ -2490,6 +2490,52 @@ const restored = parseCSV(csv); // 원본 복원
 
 ---
 
+### encoding
+
+Unicode-safe Base64 / Base64URL 인코딩·디코딩. `btoa`/`atob`의 두 가지 문제(한글·이모지 등 ASCII 범위 밖 문자 throw, URL-safe 변형 없음)를 해결한다. 브라우저, Node.js(v16+), Edge Runtime 모두 호환.
+
+| 함수 | 시그니처 | 설명 |
+|------|----------|------|
+| `encodeBase64` | `encodeBase64(input: string): string` | 문자열 → Base64 (유니코드 안전, `TextEncoder` 사용) |
+| `decodeBase64` | `decodeBase64(input: string): string` | Base64 → 문자열 (Base64URL 형식도 허용) |
+| `encodeBase64Url` | `encodeBase64Url(input: string): string` | 문자열 → Base64URL (`+`→`-`, `/`→`_`, 패딩 제거) |
+| `decodeBase64Url` | `decodeBase64Url(input: string): string` | Base64URL → 문자열 (패딩 없어도 자동 복원) |
+| `bytesToBase64` | `bytesToBase64(bytes: Uint8Array): string` | 바이트 배열 → Base64 |
+| `base64ToBytes` | `base64ToBytes(input: string): Uint8Array` | Base64 → 바이트 배열 |
+| `bytesToBase64Url` | `bytesToBase64Url(bytes: Uint8Array): string` | 바이트 배열 → Base64URL |
+| `isValidBase64` | `isValidBase64(input: string): boolean` | Base64 / Base64URL 유효성 검사 |
+
+```ts
+import { encodeBase64, decodeBase64, encodeBase64Url, decodeBase64Url, bytesToBase64 } from "simple-ts-tools";
+
+// 기본 Base64 — 유니코드 안전
+encodeBase64("Hello, World!")  // "SGVsbG8sIFdvcmxkIQ=="
+encodeBase64("안녕하세요")      // UTF-8로 변환 후 인코딩 (btoa는 throw)
+encodeBase64("🎉🚀")           // 이모지도 안전하게 처리
+
+decodeBase64("SGVsbG8sIFdvcmxkIQ==")  // "Hello, World!"
+
+// Base64URL — JWT, 쿠키, URL 파라미터
+encodeBase64Url("Hello")  // 패딩 없음, + / 없음 → URL에 직접 삽입 가능
+
+// JWT 페이로드 수동 인코딩/디코딩
+const payload = { sub: "user_123", exp: 9999999999 };
+const encoded = encodeBase64Url(JSON.stringify(payload));
+// → URL-safe 문자만 포함, 패딩 없음
+
+const decoded = JSON.parse(decodeBase64Url(jwtToken.split(".")[1]));
+
+// 바이너리 데이터 — 이미지 인라인
+const imageBytes = new Uint8Array([137, 80, 78, 71, ...]);
+const dataUrl = `data:image/png;base64,${bytesToBase64(imageBytes)}`;
+
+// Web Crypto API 결과 직렬화
+const hash = await crypto.subtle.digest("SHA-256", data);
+const hashBase64 = bytesToBase64Url(new Uint8Array(hash));  // URL-safe hash
+```
+
+---
+
 ### color
 
 HEX ↔ RGB ↔ HSL 변환, 밝기·채도·투명도 조작, 색상 혼합. 별도 의존성 없이 UI 프로젝트에서 가장 자주 쓰는 색상 유틸리티를 제공한다.

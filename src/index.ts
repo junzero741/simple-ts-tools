@@ -1,6 +1,7 @@
 export * from "./array";
 export * from "./color";
 export * from "./csv";
+export * from "./encoding";
 export * from "./env";
 export * from "./id";
 export * from "./set";
