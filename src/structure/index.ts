@@ -19,3 +19,5 @@ export type { CompareFn } from "./sortedArray";
 export { Multimap } from "./multimap";
 export { createVersionedMap } from "./versionedMap";
 export type { VersionedMap } from "./versionedMap";
+export { createObjectPool } from "./objectPool";
+export type { ObjectPool, ObjectPoolOptions } from "./objectPool";
