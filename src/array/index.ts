@@ -23,3 +23,4 @@ export { rotate } from "./rotate";
 export { unzip, zipWith } from "./unzip";
 export { scan } from "./scan";
 export { orderBy } from "./orderBy";
+export { binarySearch, sortedIndex, sortedLastIndex } from "./binarySearch";

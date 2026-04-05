@@ -46,6 +46,9 @@ pnpm add simple-ts-tools
 | `zipWith` | `zipWith<A,B,R>(a: A[], b: B[], fn: (a:A,b:B)=>R): R[]` | zip + map 일괄 처리 — 두(또는 세) 배열을 결합 함수에 적용 |
 | `scan` | `scan<T, U>(arr: T[], initial: U, fn: (acc: U, item: T, index: number) => U): U[]` | 누적 reduce — 매 단계의 중간 값을 배열로 반환 (누적 합·잔액 추적 등) |
 | `orderBy` | `orderBy<T>(arr: T[], keys: KeyFn<T>[], orders?: Order[]): T[]` | 다중 키 정렬 — 키 우선순위 순서로 정렬, null/undefined는 항상 맨 뒤 (stable, 비파괴) |
+| `binarySearch` | `binarySearch<T>(arr: T[], value: T, compareFn?): number` | 정렬된 배열에서 O(log n) 탐색 — 인덱스 반환, 없으면 -1 |
+| `sortedIndex` | `sortedIndex<T>(arr: T[], value: T, compareFn?): number` | 정렬 유지 삽입 위치 (lower bound) — `splice`와 조합해 정렬 배열에 O(log n) 삽입 |
+| `sortedLastIndex` | `sortedLastIndex<T>(arr: T[], value: T, compareFn?): number` | 정렬 유지 삽입 위치 (upper bound) — 중복 값의 오른쪽 경계 |
 | `take` | `take<T>(arr: T[], n: number): T[]` | 앞에서 n개 반환 |
 | `drop` | `drop<T>(arr: T[], n: number): T[]` | 앞에서 n개 제거한 나머지 반환 |
 | `takeLast` | `takeLast<T>(arr: T[], n: number): T[]` | 뒤에서 n개 반환 |
@@ -292,6 +295,28 @@ const page6 = paginate(posts, 6, 10);
 
 // 실사용: React 컴포넌트
 const { data, totalPages, hasNext, hasPrev } = paginate(allItems, currentPage, 20);
+
+// binarySearch — 정렬된 배열에서 O(log n) 탐색 (Array.indexOf는 O(n))
+binarySearch([1, 3, 5, 7, 9], 5)    // 2
+binarySearch([1, 3, 5, 7, 9], 4)    // -1 (없음)
+binarySearch(["a", "b", "c"], "b")  // 1
+
+// 객체 배열 — 커스텀 비교 함수
+const products = [{ price: 10 }, { price: 25 }, { price: 50 }, { price: 100 }];
+binarySearch(products, { price: 25 }, (a, b) => a.price - b.price); // 1
+
+// sortedIndex — 정렬 유지 삽입 (lower bound)
+sortedIndex([1, 3, 5, 7], 4)   // 2 → [1, 3, _4_, 5, 7]
+sortedIndex([1, 3, 3, 5], 3)   // 1 → 첫 번째 3의 위치
+
+// 정렬된 배열에 값 삽입
+const sorted = [1, 3, 5, 7, 9];
+sorted.splice(sortedIndex(sorted, 4), 0, 4);
+// [1, 3, 4, 5, 7, 9]
+
+// sortedLastIndex + sortedIndex — 중복 범위 슬라이스
+const arr = [1, 2, 3, 3, 3, 4, 5];
+arr.slice(sortedIndex(arr, 3), sortedLastIndex(arr, 3)); // [3, 3, 3]
 ```
 
 ---
