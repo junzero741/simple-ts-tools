@@ -44,6 +44,7 @@ pnpm add simple-ts-tools
 | `rotate` | `rotate<T>(arr: T[], n: number): T[]` | 배열을 왼쪽(양수)/오른쪽(음수)으로 n칸 회전 (비파괴) |
 | `unzip` | `unzip<T extends readonly unknown[]>(pairs: T[]): { [K in keyof T]: T[K][] }` | 튜플 배열 → 개별 배열들 (zip 역연산 / 행렬 전치) |
 | `zipWith` | `zipWith<A,B,R>(a: A[], b: B[], fn: (a:A,b:B)=>R): R[]` | zip + map 일괄 처리 — 두(또는 세) 배열을 결합 함수에 적용 |
+| `scan` | `scan<T, U>(arr: T[], initial: U, fn: (acc: U, item: T, index: number) => U): U[]` | 누적 reduce — 매 단계의 중간 값을 배열로 반환 (누적 합·잔액 추적 등) |
 | `take` | `take<T>(arr: T[], n: number): T[]` | 앞에서 n개 반환 |
 | `drop` | `drop<T>(arr: T[], n: number): T[]` | 앞에서 n개 제거한 나머지 반환 |
 | `takeLast` | `takeLast<T>(arr: T[], n: number): T[]` | 뒤에서 n개 반환 |
@@ -514,6 +515,7 @@ emitter
 | `once` | `once<TArgs, TReturn>(fn): fn & { reset() }` | 최초 한 번만 실행, 이후 호출은 첫 결과 반환 |
 | `pipe` | `pipe(value, ...fns): T` | 값을 함수들에 왼쪽→오른쪽으로 순서대로 통과 (최대 8단계 타입 안전) |
 | `throttle` | `throttle<T>(fn: T, interval: number): T & { cancel() }` | interval ms 내 최대 한 번 실행 (leading-edge + trailing) |
+| `negate` | `negate<T>(fn: (...args: T) => boolean): (...args: T) => boolean` | 술어 함수의 결과를 반전시킨 새 함수 반환 (`!fn(...)`) |
 
 ```ts
 import { curry, debounce, throttle, pipe } from "simple-ts-tools";
@@ -631,6 +633,47 @@ const double = multiply(2);
 const triple = multiply(3);
 
 pipe(5, double, triple); // 30  (5 → 10 → 30)
+
+// negate — 술어 함수의 결과를 반전
+const isEven = (n: number) => n % 2 === 0;
+[1, 2, 3, 4, 5].filter(negate(isEven)); // [1, 3, 5]
+
+const isNil = (v: unknown): v is null | undefined => v == null;
+[1, null, 2, undefined, 3].filter(negate(isNil)); // [1, 2, 3]
+
+// pipe + negate 조합
+const processItems = (items: string[]) =>
+  pipe(items,
+    xs => xs.filter(negate(s => s.length === 0)),  // 빈 문자열 제거
+    xs => unique(xs),                               // 중복 제거
+  );
+```
+
+#### scan 예제
+
+```ts
+import { scan } from "simple-ts-tools";
+
+// 누적 합 — running totals
+scan([1, 2, 3, 4], 0, (acc, x) => acc + x);
+// [1, 3, 6, 10]
+
+// 잔액 추적 — 입출금 내역
+const transactions = [100, -10, 20, -5, 50];
+scan(transactions, 0, (acc, x) => acc + x);
+// [100, 90, 110, 105, 155]
+
+// 진행률 — 작업 완료 비율 누적
+const weights = [10, 30, 60]; // 총합 100
+scan(weights, 0, (acc, w) => acc + w);
+// [10, 40, 100]
+
+// 프리픽스 합 배열 생성 — O(1) 범위 합 조회
+const arr = [3, 1, 4, 1, 5, 9];
+const prefix = [0, ...scan(arr, 0, (acc, x) => acc + x)];
+// prefix: [0, 3, 4, 8, 9, 14, 23]
+const rangeSum = (l: number, r: number) => prefix[r + 1] - prefix[l];
+rangeSum(2, 4); // arr[2]+arr[3]+arr[4] = 4+1+5 = 10
 ```
 
 ---

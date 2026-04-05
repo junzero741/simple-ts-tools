@@ -21,3 +21,4 @@ export { take, drop, takeWhile, dropWhile, takeLast, dropLast } from "./slice";
 export { windows, pairwise } from "./windows";
 export { rotate } from "./rotate";
 export { unzip, zipWith } from "./unzip";
+export { scan } from "./scan";
