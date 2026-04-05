@@ -3,3 +3,5 @@ export { Queue } from "./Queue";
 export { Stack } from "./Stack";
 export { Trie } from "./Trie";
 export { BitSet } from "./bitset";
+export { LinkedList } from "./linkedList";
+export type { ListNode } from "./linkedList";
