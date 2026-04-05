@@ -309,6 +309,7 @@ const { data, totalPages, hasNext, hasPrev } = paginate(allItems, currentPage, 2
 | `timeout` | `timeout<T>(promise: Promise<T>, ms: number, message?: string): Promise<T>` | 타임아웃 초과 시 reject |
 | `createBatch` | `createBatch<K, V>(batchFn, options?): Batcher<K, V>` | DataLoader 패턴 — 같은 틱의 `load(key)` 호출을 자동으로 묶어 단일 배치 함수로 처리 |
 | `poll` | `poll<T>(fn, predicate, options?): Promise<T>` | 조건이 충족될 때까지 비동기 함수를 반복 호출 (`retry`는 실패 재시도, `poll`은 정상 응답 검사) |
+| `pLimit` | `pLimit(concurrency): Limiter` | 동시에 실행할 비동기 작업 수를 제한하는 concurrency limiter — `activeCount`/`pendingCount`/`clearQueue()` 제공 |
 
 **MemoizeAsyncOptions**
 
@@ -503,6 +504,27 @@ const logLoader = createBatch(
 `retry` vs `poll` 비교:
 - `retry`: fn이 **throw** 하면 재시도 (네트워크 오류 등 예외 상황 대응)
 - `poll`: fn이 **정상 값**을 반환하지만 원하는 조건이 아닐 때 재시도 (상태 변화 대기)
+
+```ts
+import { pLimit } from "simple-ts-tools";
+
+// API 호출을 최대 3개씩 병렬 처리 (rate limit 준수)
+const limit = pLimit(3);
+const results = await Promise.all(
+  urls.map(url => limit(() => fetch(url).then(r => r.json())))
+);
+
+// 파일 처리 — 한 번에 5개씩만 열기
+const limit = pLimit(5);
+await Promise.all(files.map(f => limit(() => processFile(f))));
+
+// 진행 상황 모니터링
+console.log(limit.activeCount);  // 현재 실행 중인 작업 수
+console.log(limit.pendingCount); // 대기 중인 작업 수
+
+// 긴급 취소 — 남은 큐 비우기 (실행 중인 작업은 그대로 완료)
+limit.clearQueue();
+```
 
 ```ts
 import { poll, PollTimeoutError } from "simple-ts-tools";

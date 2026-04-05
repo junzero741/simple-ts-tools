@@ -13,3 +13,5 @@ export { createBatch } from "./batch";
 export type { BatchOptions, Batcher } from "./batch";
 export { poll, PollTimeoutError } from "./poll";
 export type { PollOptions } from "./poll";
+export { pLimit } from "./pLimit";
+export type { Limiter } from "./pLimit";
