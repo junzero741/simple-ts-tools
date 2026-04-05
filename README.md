@@ -1460,8 +1460,12 @@ const zScore = (score - mean(scores)) / classStdDev;
 | `omitBy` | `omitBy<T>(obj: T, predicate: (value, key) => boolean): Partial<T>` | predicate 통과 항목을 제외한 새 객체 반환 |
 | `pick` | `pick<T, K extends keyof T>(obj: T, keys: readonly K[]): Pick<T, K>` | 지정한 키만 추출한 새 객체 반환 |
 | `pickBy` | `pickBy<T>(obj: T, predicate: (value, key) => boolean): Partial<T>` | predicate 통과 항목만 추출한 새 객체 반환 |
-| `diff` | `diff(a, b: Record<string, unknown>): DiffResult` | 두 객체의 얕은 diff — added/removed/changed 반환 |
+| `diff` | `diff(a, b: Record<string, unknown>): DiffResult` | 두 객체의 얕은 diff — 최상위 키 기준 added/removed/changed 반환 |
 | `isDiffEmpty` | `isDiffEmpty(result: DiffResult): boolean` | diff 결과에 변경사항이 없으면 true |
+| `deepDiff` | `deepDiff(a, b): Change[]` | 재귀적 경로 기반 diff — 중첩 객체·배열 내 변경을 `"user.age"`, `"tags[1]"` 형태의 경로로 반환 |
+| `hasDeepDiff` | `hasDeepDiff(a, b): boolean` | 재귀적으로 변경 여부만 빠르게 확인 |
+| `deepPatch` | `deepPatch<T>(obj: T, changes: Change[]): T` | `deepDiff()` 변경 목록을 적용해 새 객체 반환 (비파괴) |
+| `invertChanges` | `invertChanges(changes: Change[]): Change[]` | 변경 방향 역전 (add↔remove, update oldValue↔newValue) — undo/redo에 사용 |
 | `defaults` | `defaults<T>(target: T, ...sources: Partial<T>[]): T` | target의 `undefined` 속성만 source로 채움 (null·기존값 유지) |
 | `omitNil` | `omitNil<T>(obj: T): ...` | null·undefined 속성 제거 (0·false·"" 유지) |
 | `omitFalsy` | `omitFalsy<T>(obj: T): Partial<T>` | 모든 falsy 속성(null·undefined·0·false·"") 제거 |
@@ -1608,7 +1612,55 @@ if (!isDiffEmpty(d)) {
 // PATCH 페이로드 생성 — 변경된 필드만 서버로 전송
 const patch = diff(original, edited).changed;
 api.patch("/user", Object.fromEntries(Object.entries(patch).map(([k, v]) => [k, v.to])));
+```
 
+```ts
+import { deepDiff, deepPatch, hasDeepDiff, invertChanges } from "simple-ts-tools";
+
+// 재귀적 경로 기반 diff — 중첩 객체·배열까지 추적
+const changes = deepDiff(
+  { user: { name: "Alice", age: 30 }, tags: ["ts"] },
+  { user: { name: "Alice", age: 31 }, tags: ["ts", "js"] },
+);
+// [
+//   { type: "update", path: "user.age",  oldValue: 30,   newValue: 31 },
+//   { type: "add",    path: "tags[1]",   newValue: "js" },
+// ]
+
+// 폼 dirty 감지 — 중첩 필드까지 정확하게
+const saved   = { profile: { name: "Alice", bio: "Engineer" } };
+const current = { profile: { name: "Alice", bio: "Senior Engineer" } };
+hasDeepDiff(saved, current); // true
+deepDiff(saved, current);    // [{ type: "update", path: "profile.bio", ... }]
+
+// 변경 적용 — 비파괴 (원본 불변)
+const updated = deepPatch(original, changes);
+
+// undo/redo — 변경 방향 역전
+const undoChanges = invertChanges(changes);
+const restored    = deepPatch(updated, undoChanges); // original과 동일
+
+// 다단계 undo 히스토리
+let state = { count: 0 };
+const history: ReturnType<typeof deepDiff>[] = [];
+
+function applyUpdate(next: typeof state) {
+  history.push(deepDiff(state, next));
+  state = deepPatch(state, history.at(-1)!);
+}
+
+applyUpdate({ count: 1 });
+applyUpdate({ count: 2 });
+
+// undo
+state = deepPatch(state, invertChanges(history.pop()!)); // count: 1
+
+// 감사 로그 — 정확한 변경 경로와 이전/이후 값 기록
+const auditLog = deepDiff(before, after);
+await db.insert("audit_log", { userId, changes: JSON.stringify(auditLog) });
+```
+
+```ts
 // defaults — undefined인 속성만 채움 (deepMerge와의 차이)
 // deepMerge: source가 target을 덮어씀 (source 우선)
 // defaults:  target의 기존 값 유지, undefined만 source에서 채움 (target 우선)

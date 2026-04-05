@@ -12,6 +12,8 @@ export { omitBy } from "./omitBy";
 export { pick } from "./pick";
 export { pickBy } from "./pickBy";
 export { diff, isDiffEmpty } from "./diff";
+export { deepDiff, deepPatch, hasDeepDiff, invertChanges } from "./deepDiff";
+export type { Change, ChangeType } from "./deepDiff";
 export { defaults } from "./defaults";
 export { omitNil, omitFalsy } from "./omitNil";
 export { deepFreeze } from "./deepFreeze";
