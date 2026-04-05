@@ -34,3 +34,5 @@ export { createSemaphore } from "./semaphore";
 export type { Semaphore } from "./semaphore";
 export { createDisposable, using } from "./disposable";
 export type { Disposable, CleanupFn } from "./disposable";
+export { createChannel, select } from "./channel";
+export type { Channel, SelectResult } from "./channel";
