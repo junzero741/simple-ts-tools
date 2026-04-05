@@ -400,6 +400,7 @@ emitter
 
 | 함수 | 시그니처 | 설명 |
 |------|----------|------|
+| `compose` | `compose(...fns): (a: A) => R` | 함수들을 오른쪽→왼쪽으로 합성해 재사용 가능한 변환 함수 반환 (최대 8단계 타입 안전) |
 | `curry` | `curry(fn): CurriedFn` | 함수를 커리화 — 인자를 하나씩 받아 마지막까지 받으면 실행 (2~4인자 완전 타입 추론) |
 | `debounce` | `debounce<T>(fn: T, wait: number): T & { cancel() }` | 마지막 호출 후 wait ms 뒤에 실행 (trailing-edge) |
 | `memoize` | `memoize<TArgs, TReturn>(fn, keyFn?): fn & { cache: Map; clear() }` | 인자 기준으로 결과 캐싱 |
@@ -409,6 +410,35 @@ emitter
 
 ```ts
 import { curry, debounce, throttle, pipe } from "simple-ts-tools";
+
+// compose — 재사용 가능한 변환 함수 조립 (오른쪽 → 왼쪽)
+const double  = (n: number) => n * 2;
+const addOne  = (n: number) => n + 1;
+const square  = (n: number) => n * n;
+
+compose(double, addOne, square)(3);
+// square(3)=9 → addOne(9)=10 → double(10)=20
+
+// pipe와의 차이:
+// pipe(3, square, addOne, double)  → 값을 즉시 통과 (일회성)
+// compose(double, addOne, square)  → 재사용 가능한 함수 반환
+
+// .map()과 함께 사용 — 핵심 강점
+[1, 2, 3].map(compose(double, addOne)); // [4, 6, 8]
+
+// 재사용 가능한 정규화 파이프라인
+const normalizeUsername = compose(
+  (s: string) => s.replace(/[^a-z0-9]/g, ""),
+  (s: string) => s.toLowerCase(),
+  (s: string) => s.trim(),
+);
+users.map(u => ({ ...u, username: normalizeUsername(u.username) }));
+
+// 커링과 조합 — 설정 가능한 변환 합성
+const clamp = (max: number) => (n: number) => Math.min(n, max);
+const round2 = (n: number) => Math.round(n * 100) / 100;
+const processPrice = compose(clamp(999.99), round2);
+prices.map(processPrice);
 
 // 검색창 — 입력 멈춘 300ms 후 API 호출
 const search = debounce((q: string) => fetchResults(q), 300);
