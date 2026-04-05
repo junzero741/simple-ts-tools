@@ -405,6 +405,7 @@ isUrl("javascript:alert(1)");     // false
 | 함수 | 시그니처 | 설명 |
 |------|----------|------|
 | `clamp` | `clamp(value: number, min: number, max: number): number` | 값을 [min, max] 범위로 제한 |
+| `formatNumber` | `formatNumber(value: number, options?): string` | 천단위 구분·소수점·통화·compact 포맷 |
 | `randomInt` | `randomInt(min: number, max: number): number` | [min, max] 범위의 정수 난수 (양 끝 포함) |
 | `range` | `range(start: number, end: number, step?: number): number[]` | [start, end) 범위의 숫자 배열 생성 |
 | `round` | `round(value: number, decimals?: number): number` | 소수 자릿수 반올림 (부동소수점 오차 보정) |
@@ -426,6 +427,13 @@ clamp(progress, 0, 100);
 
 // 슬라이더 값 제한
 clamp(inputValue, min, max);
+
+// 숫자 포맷 — Intl.NumberFormat 기반
+formatNumber(1234567);                             // "1,234,567"
+formatNumber(1234567.89, { decimals: 2 });         // "1,234,567.89"
+formatNumber(50000, { currency: "KRW" });          // "₩50,000"
+formatNumber(9900000, { notation: "compact" });    // "990만" (ko-KR)
+formatNumber(1234567, { locale: "en-US", decimals: 2 }); // "1,234,567.00"
 ```
 
 ---
@@ -586,7 +594,9 @@ formatPhoneNumber("0212345678");  // "02-123-4567" (8자리 지역번호 형식)
 |------|----------|------|
 | `camelToKebab` | `camelToKebab(str: string): string` | camelCase/PascalCase → kebab-case (약어 처리 포함) |
 | `capitalize` | `capitalize(str: string): string` | 첫 글자 대문자, 나머지 소문자 |
+| `escapeHtml` | `escapeHtml(str: string): string` | HTML 특수 문자를 엔티티로 변환 (`& < > " '`) |
 | `formatBytes` | `formatBytes(bytes: number, decimals?: number): string` | 바이트 수를 사람이 읽기 좋은 단위로 변환 (B/KB/MB/GB/TB) |
+| `unescapeHtml` | `unescapeHtml(str: string): string` | HTML 엔티티를 원래 문자로 복원 |
 | `isEmpty` | `isEmpty(value: string \| null \| undefined): boolean` | 빈 문자열·공백·null·undefined이면 true |
 | `kebabToCamel` | `kebabToCamel(str: string): string` | kebab-case → camelCase |
 | `truncate` | `truncate(str: string, maxLength: number, suffix?: string): string` | maxLength 초과 시 suffix(기본 "…")를 붙여 잘라냄 |
@@ -624,6 +634,20 @@ formatBytes(1024 ** 3);       // "1 GB"
 
 // 업로드 UI, 파일 탐색기에서 자주 사용
 `파일 크기: ${formatBytes(file.size)}` // "파일 크기: 2.34 MB"
+
+// XSS 방지 — innerHTML에 동적 데이터 삽입 전 필수
+escapeHtml('<script>alert("xss")</script>');
+// '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;'
+
+escapeHtml('안녕 & "반가워" <br>');
+// '안녕 &amp; &quot;반가워&quot; &lt;br&gt;'
+
+// 역변환
+unescapeHtml('&lt;b&gt;hello&lt;/b&gt;'); // '<b>hello</b>'
+
+// 왕복 무손실
+const raw = '<b>Alice & "Bob"</b>';
+unescapeHtml(escapeHtml(raw)) === raw; // true
 ```
 
 ---
@@ -668,6 +692,12 @@ dfs(tree);  // [4, 5, 2, 3, 1]
 
 | 함수 | 시그니처 | 설명 |
 |------|----------|------|
+| `addDays` | `addDays(date: Date, days: number): Date` | n일을 더한 새 Date 반환 |
+| `subDays` | `subDays(date: Date, days: number): Date` | n일을 뺀 새 Date 반환 |
+| `startOfDay` | `startOfDay(date: Date): Date` | 하루의 시작 시각 (00:00:00.000) |
+| `endOfDay` | `endOfDay(date: Date): Date` | 하루의 마지막 시각 (23:59:59.999) |
+| `isSameDay` | `isSameDay(a: Date, b: Date): boolean` | 같은 날(연·월·일)인지 확인 (시각 무시) |
+| `diffDays` | `diffDays(a: Date, b: Date): number` | 두 날짜의 일수 차이 (절댓값) |
 | `formatDate` | `formatDate(date: Date, format: string): string` | 토큰 기반 날짜 포맷 변환 |
 | `formatRelativeTime` | `formatRelativeTime(date: Date, base?: Date, locale?: "ko"\|"en"): string` | 상대 시간 표시 ("3분 전", "2일 후") |
 
@@ -706,6 +736,27 @@ formatDate(afternoon, "hh:mm a");        // "02:30 pm"
 
 // 파일명, 로그 타임스탬프
 `log_${formatDate(new Date(), "YYYY-MM-DD")}.txt` // "log_2024-06-07.txt"
+
+// 날짜 조작 — 원본 불변
+const today = new Date("2024-06-07");
+addDays(today, 7);     // 2024-06-14 (today는 변하지 않음)
+subDays(today, 3);     // 2024-06-04
+startOfDay(today);     // 2024-06-07T00:00:00.000
+endOfDay(today);       // 2024-06-07T23:59:59.999
+
+// 날짜 비교 / 필터링
+isSameDay(new Date(), new Date());                             // true
+diffDays(new Date("2024-01-01"), new Date("2024-01-31"));     // 30
+
+// 활용 패턴
+const todayPosts = posts.filter(p => isSameDay(p.createdAt, new Date()));
+const weekAgo = subDays(new Date(), 7);
+const thisWeekPosts = posts.filter(p => p.createdAt >= weekAgo);
+
+// 날짜 범위 쿼리
+const start = startOfDay(selectedDate);
+const end = endOfDay(selectedDate);
+db.query({ createdAt: { gte: start, lte: end } });
 
 // 상대 시간 표시 (SNS 피드, 댓글, 알림)
 const now = new Date();
