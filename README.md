@@ -482,6 +482,7 @@ emitter
 |------|----------|------|
 | `compose` | `compose(...fns): (a: A) => R` | 함수들을 오른쪽→왼쪽으로 합성해 재사용 가능한 변환 함수 반환 (최대 8단계 타입 안전) |
 | `curry` | `curry(fn): CurriedFn` | 함수를 커리화 — 인자를 하나씩 받아 마지막까지 받으면 실행 (2~4인자 완전 타입 추론) |
+| `partial` | `partial(fn, ...boundArgs): (...remaining) => R` | 앞쪽 인자를 미리 바인딩한 특화 함수 생성 (2~5인자 완전 타입 추론) |
 | `debounce` | `debounce<T>(fn: T, wait: number): T & { cancel() }` | 마지막 호출 후 wait ms 뒤에 실행 (trailing-edge) |
 | `memoize` | `memoize<TArgs, TReturn>(fn, keyFn?): fn & { cache: Map; clear() }` | 인자 기준으로 결과 캐싱 |
 | `once` | `once<TArgs, TReturn>(fn): fn & { reset() }` | 최초 한 번만 실행, 이후 호출은 첫 결과 반환 |
@@ -519,6 +520,35 @@ const clamp = (max: number) => (n: number) => Math.min(n, max);
 const round2 = (n: number) => Math.round(n * 100) / 100;
 const processPrice = compose(clamp(999.99), round2);
 prices.map(processPrice);
+
+// partial — 앞쪽 인자를 미리 바인딩 (curry와의 차이: 여러 인자를 한 번에)
+// curry:   add(1)(2)(3)        — 한 번에 하나씩
+// partial: partial(add, 1)(2, 3) — 여러 개를 한 번에 바인딩
+
+const clamp = (min: number, max: number, v: number) =>
+  Math.min(Math.max(v, min), max);
+
+const clamp0to100 = partial(clamp, 0, 100);
+clamp0to100(150);   // 100
+clamp0to100(-10);   // 0
+clamp0to100(50);    // 50
+
+// .map()과 함께 사용 — 특화 함수를 콜백으로 직접 전달
+const rawScores = [120, 85, -5, 60, 105];
+rawScores.map(clamp0to100);  // [100, 85, 0, 60, 100]
+
+// API 호출 함수에 공통 설정 바인딩
+const request = (baseUrl: string, headers: Record<string, string>, path: string) =>
+  fetch(`${baseUrl}${path}`, { headers });
+const apiCall = partial(request, "https://api.example.com", { Authorization: "Bearer token" });
+apiCall("/users");   // GET https://api.example.com/users
+apiCall("/posts");   // GET https://api.example.com/posts
+
+// 정렬 기준을 미리 바인딩
+const compareBy = (key: string, a: Record<string, number>, b: Record<string, number>) =>
+  a[key] - b[key];
+const compareByAge = partial(compareBy, "age");
+users.sort(compareByAge);
 
 // 검색창 — 입력 멈춘 300ms 후 API 호출
 const search = debounce((q: string) => fetchResults(q), 300);
