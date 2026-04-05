@@ -25,3 +25,5 @@ export { IntervalTree } from "./intervalTree";
 export type { Interval } from "./intervalTree";
 export { defineBitmask } from "./bitmask";
 export type { Bitmask, BitmaskFactory } from "./bitmask";
+export { createScope } from "./scope";
+export type { Scope } from "./scope";
