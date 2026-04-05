@@ -458,6 +458,9 @@ isObject(new Date()); // false — 인스턴스는 제외
 |------|----------|------|
 | `clamp` | `clamp(value: number, min: number, max: number): number` | 값을 [min, max] 범위로 제한 |
 | `formatNumber` | `formatNumber(value: number, options?): string` | 천단위 구분·소수점·통화·compact 포맷 |
+| `lerp` | `lerp(start: number, end: number, t: number): number` | 두 값 사이의 선형 보간 (t=0→start, t=1→end) |
+| `normalize` | `normalize(value: number, min: number, max: number, clamp?: boolean): number` | [min, max] → [0, 1] 정규화 |
+| `percentage` | `percentage(value: number, total: number, decimals?: number): number` | value가 total에서 차지하는 백분율 |
 | `randomInt` | `randomInt(min: number, max: number): number` | [min, max] 범위의 정수 난수 (양 끝 포함) |
 | `range` | `range(start: number, end: number, step?: number): number[]` | [start, end) 범위의 숫자 배열 생성 |
 | `round` | `round(value: number, decimals?: number): number` | 소수 자릿수 반올림 (부동소수점 오차 보정) |
@@ -486,6 +489,28 @@ formatNumber(1234567.89, { decimals: 2 });         // "1,234,567.89"
 formatNumber(50000, { currency: "KRW" });          // "₩50,000"
 formatNumber(9900000, { notation: "compact" });    // "990만" (ko-KR)
 formatNumber(1234567, { locale: "en-US", decimals: 2 }); // "1,234,567.00"
+
+// lerp — 선형 보간 (애니메이션, UI 전환)
+lerp(0, 100, 0.5);    // 50
+lerp(10, 20, 0.25);   // 12.5
+lerp(0, 255, 0.8);    // 204  ← 색상 채널 보간
+
+// normalize — [min, max] → [0, 1] (스코어 정규화, 게이지 UI)
+normalize(50, 0, 100);          // 0.5
+normalize(75, 0, 100);          // 0.75
+normalize(150, 0, 100);         // 1.5  ← 범위 초과 허용
+normalize(150, 0, 100, true);   // 1    ← clamp: true로 제한
+normalize(0, 0, 0);             // 0    ← min === max 안전 처리
+
+// percentage — 백분율 계산 (진행률, 통계 UI)
+percentage(37, 50);             // 74
+percentage(1, 3, 1);            // 33.3
+percentage(2, 3, 2);            // 66.67
+percentage(10, 0);              // 0   ← total=0 안전 처리
+
+// 실사용: 업로드 진행률
+const progress = percentage(uploadedBytes, totalBytes, 1);
+// "74.5%"
 ```
 
 ---
@@ -497,6 +522,8 @@ formatNumber(1234567, { locale: "en-US", decimals: 2 }); // "1,234,567.00"
 | `deepClone` | `deepClone<T>(value: T): T` | 재귀적 깊은 복사 (Date/Map/Set/RegExp 포함) |
 | `deepEqual` | `deepEqual(a: unknown, b: unknown): boolean` | 재귀적 깊은 동등 비교 |
 | `deepMerge` | `deepMerge<T, S>(target: T, source: S): T & S` | 두 plain 객체를 재귀적으로 병합 (배열은 source로 덮어씀) |
+| `flattenObject` | `flattenObject(obj, separator?): Record<string, unknown>` | 중첩 객체 → 점 구분자 평탄 키 (`{ "a.b.c": 1 }`) |
+| `unflattenObject` | `unflattenObject(obj, separator?): Record<string, unknown>` | 평탄 키 → 중첩 객체 복원 (왕복 가능) |
 | `fromPairs` | `fromPairs<K, V>(pairs: [K, V][]): Record<K, V>` | [키, 값] 튜플 배열 → 객체 |
 | `invert` | `invert<K, V>(obj: Record<K, V>): Record<string, K>` | 키와 값을 뒤집은 새 객체 반환 |
 | `toPairs` | `toPairs<T>(obj: T): [keyof T, T[keyof T]][]` | 객체 → [키, 값] 튜플 배열 |
@@ -581,6 +608,30 @@ const withTax = fromPairs(
   toPairs(prices).map(([k, v]) => [k, Math.round(v * 1.1)]) as [string, number][]
 );
 // { apple: 330, banana: 165, cherry: 550 }
+
+// 중첩 객체 평탄화 — dotenv, 설정 파일, 폼 상태 직렬화
+flattenObject({ a: { b: { c: 1 }, d: 2 } });
+// { "a.b.c": 1, "a.d": 2 }
+
+flattenObject({ user: { name: "Alice", address: { city: "Seoul" } } });
+// { "user.name": "Alice", "user.address.city": "Seoul" }
+
+flattenObject({ items: ["x", "y"] });
+// { "items.0": "x", "items.1": "y" }
+
+// 커스텀 separator
+flattenObject({ a: { b: 1 } }, "/");
+// { "a/b": 1 }
+
+// 복원 (왕복)
+const flat = flattenObject(config);
+Object.keys(flat); // ["db.host", "db.port", "db.name", ...]
+unflattenObject(flat); // 원본 config 복원
+
+// 실사용: API 응답의 중첩 에러 경로를 폼 필드에 매핑
+const errors = flattenObject(apiError.details);
+// { "user.email": "이메일 형식이 올바르지 않습니다", "user.name": "필수 항목입니다" }
+setFieldErrors(errors);
 ```
 
 ---
