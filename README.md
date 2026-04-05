@@ -1901,6 +1901,7 @@ setInterval(() => tokenCache.cleanup(), 60_000);
 | `PriorityQueue<T>` | 이진 최소 힙 기반 우선순위 큐. priority 낮을수록 먼저 꺼냄. 동일 priority는 FIFO |
 | `Queue<T>` | FIFO 큐. dequeue O(1) (head 포인터 방식) |
 | `Stack<T>` | LIFO 스택. 모든 연산 O(1) |
+| `Trie` | 접두사 트리. insert/search/delete O(L), suggest(prefix) 사전순 자동완성 O(P+K) |
 
 **PriorityQueue 메서드**
 
@@ -1976,6 +1977,57 @@ function isBalanced(s: string) {
   }
   return stack.isEmpty;
 }
+```
+
+**Trie 메서드**
+
+| 메서드 / 프로퍼티 | 시그니처 | 설명 |
+|--------|----------|------|
+| `new Trie(words?)` | `(words?: string[])` | 초기 단어 배열로 생성 가능 |
+| `.insert(word)` | `(word: string): this` | O(L) 삽입. 중복 무시. 체이닝 가능 |
+| `.search(word)` | `(word: string): boolean` | O(L) 정확히 일치하는 단어가 있으면 true |
+| `.startsWith(prefix)` | `(prefix: string): boolean` | O(L) 해당 접두사로 시작하는 단어가 있으면 true |
+| `.suggest(prefix?, limit?)` | `(prefix?: string, limit?: number): string[]` | O(P+K) 접두사로 시작하는 단어를 사전순으로 반환. limit으로 수 제한 |
+| `.delete(word)` | `(word: string): boolean` | O(L) 단어 삭제. 성공 여부 반환 |
+| `.toArray()` | `(): string[]` | 모든 단어 사전순 반환 |
+| `.size` | `number` | 저장된 단어 수 |
+| `.isEmpty` | `boolean` | 비어있는지 확인 |
+
+```ts
+import { Trie } from "simple-ts-tools";
+
+// 검색창 자동완성
+const trie = new Trie(["react", "react-dom", "react-router", "redux", "recoil"]);
+
+trie.suggest("re");       // ["react", "react-dom", "react-router", "recoil", "redux"]
+trie.suggest("redu");     // ["redux"]
+trie.suggest("re", 3);    // 최대 3개만 반환 (드롭다운 UI 성능 최적화)
+
+// 단어 존재 여부 확인
+trie.search("react");       // true
+trie.search("reac");        // false — 접두사는 false
+trie.startsWith("reac");    // true  — 접두사 확인은 startsWith
+
+// 항목 삭제 — 검색 기록 제거
+trie.delete("react-dom");
+trie.suggest("react");     // ["react", "react-router"]
+
+// 금지어 필터
+const blocklist = new Trie(["spam", "scam"]);
+const hasBlocked = (text: string) =>
+  text.split(" ").some(w => blocklist.search(w.toLowerCase()));
+
+// 파일 경로 탐색
+const fileTrie = new Trie([
+  "src/components/Button.tsx",
+  "src/components/Input.tsx",
+  "src/hooks/useAuth.ts",
+]);
+fileTrie.suggest("src/components");
+// ["src/components/Button.tsx", "src/components/Input.tsx"]
+
+// 전체 단어 사전순 조회
+trie.toArray(); // 모든 단어를 사전순으로
 ```
 
 ---
