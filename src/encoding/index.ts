@@ -8,3 +8,13 @@ export {
   bytesToBase64Url,
   isValidBase64,
 } from "./base64";
+export {
+  sha256,
+  sha384,
+  sha512,
+  hmacSha256,
+  randomBytes,
+  randomHex,
+  timingSafeEqual,
+} from "./hash";
+export type { HashEncoding } from "./hash";
