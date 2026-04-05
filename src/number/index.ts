@@ -6,3 +6,5 @@ export { randomInt } from "./randomInt";
 export { range } from "./range";
 export { round } from "./round";
 export { sum, mean, median, mode, variance, stddev } from "./statistics";
+export { formatCurrency, formatCompact, formatPercent, formatUnit, formatOrdinal, formatList } from "./intlFormat";
+export type { PercentOptions } from "./intlFormat";
