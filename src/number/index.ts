@@ -10,3 +10,5 @@ export { formatCurrency, formatCompact, formatPercent, formatUnit, formatOrdinal
 export type { PercentOptions } from "./intlFormat";
 export { createTimeSeries } from "./timeSeries";
 export type { TimeSeries, TimeSeriesOptions } from "./timeSeries";
+export { createRateMeter } from "./rateMeter";
+export type { RateMeter, RateMeterOptions } from "./rateMeter";
