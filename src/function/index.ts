@@ -30,3 +30,5 @@ export { contract, withInvariant, ContractError } from "./contract";
 export type { ContractOptions } from "./contract";
 export { createCommandHistory } from "./commandHistory";
 export type { Command, CommandHistory, CommandHistoryOptions } from "./commandHistory";
+export { createPluginSystem } from "./pluginSystem";
+export type { PluginSystem, PluginDef } from "./pluginSystem";
