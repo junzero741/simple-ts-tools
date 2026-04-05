@@ -46,3 +46,9 @@ export { createRPCClient, createRPCServer } from "./rpc";
 export type { RPCClient, RPCServer, RPCRequest, RPCResponse, RPCClientOptions } from "./rpc";
 export { createPriorityScheduler } from "./priorityScheduler";
 export type { PriorityScheduler, ScheduledJob, ScheduleOptions } from "./priorityScheduler";
+export {
+  asyncMap, asyncFilter, asyncTake, asyncSkip,
+  asyncBatch, asyncTap, asyncConcat,
+  asyncToArray, asyncReduce, asyncFind, asyncSome, asyncEvery,
+  fromIterable,
+} from "./asyncIterator";
