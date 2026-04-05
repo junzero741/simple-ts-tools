@@ -60,3 +60,5 @@ export { createAsyncLock } from "./asyncLock";
 export type { AsyncLock } from "./asyncLock";
 export { createActor } from "./actor";
 export type { Actor } from "./actor";
+export { createHealthCheck } from "./healthCheck";
+export type { HealthCheck, HealthReport, CheckResult, CheckOptions } from "./healthCheck";
