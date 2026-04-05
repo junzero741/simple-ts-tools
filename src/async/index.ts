@@ -44,3 +44,5 @@ export { createAbortScope, linkSignals, abortable } from "./abortScope";
 export type { AbortScope } from "./abortScope";
 export { createRPCClient, createRPCServer } from "./rpc";
 export type { RPCClient, RPCServer, RPCRequest, RPCResponse, RPCClientOptions } from "./rpc";
+export { createPriorityScheduler } from "./priorityScheduler";
+export type { PriorityScheduler, ScheduledJob, ScheduleOptions } from "./priorityScheduler";
