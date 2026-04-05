@@ -2283,6 +2283,34 @@ function createPost(body: unknown) {
 }
 ```
 
+### id
+
+암호학적으로 안전한 랜덤 ID 생성. `Math.random()` 기반 구현의 편향·충돌 위험 없이 `crypto.getRandomValues()`를 사용한다. 브라우저, Node.js(v15+), Edge Runtime 모두 지원.
+
+| 함수 | 시그니처 | 설명 |
+|------|----------|------|
+| `createId` | `createId(options?): string` | URL-safe 랜덤 ID 생성. 길이·문자셋 커스터마이징 가능 (기본: 21자, `A-Za-z0-9_-`) |
+| `createUUID` | `createUUID(): string` | RFC 4122 UUID v4 형식 생성 (`xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx`) |
+
+```ts
+import { createId, createUUID } from "simple-ts-tools";
+
+// 기본 — 21자 URL-safe ID (nanoid 호환)
+createId()                                         // "V1StGXR8_Z5jdHi6B-myT"
+
+// 커스텀 길이
+createId({ length: 10 })                           // "K7xQpL3mNw"
+
+// 커스텀 문자셋 — 16진수 ID
+createId({ length: 8, alphabet: "0123456789abcdef" })  // "3f9a1c2e"
+
+// 숫자만 (OTP 코드, 주문 번호 등)
+createId({ length: 6, alphabet: "0123456789" })    // "847392"
+
+// UUID v4 — DB primary key, 외부 API 연동
+createUUID()  // "550e8400-e29b-41d4-a716-446655440000"
+```
+
 ---
 
 ## 개발

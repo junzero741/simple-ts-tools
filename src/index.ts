@@ -1,4 +1,5 @@
 export * from "./array";
+export * from "./id";
 export * from "./async";
 export * from "./cache";
 export * from "./date";
