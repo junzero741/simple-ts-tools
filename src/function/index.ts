@@ -38,3 +38,5 @@ export {
   withTiming, withFallback, withLogging,
   withTransform, withMaxCalls, withDelay, withValidation,
 } from "./retry.decorator";
+export { saga } from "./saga";
+export type { SagaBuilder, SagaResult, SagaStep } from "./saga";
