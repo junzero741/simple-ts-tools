@@ -14,3 +14,5 @@ export { pickBy } from "./pickBy";
 export { diff, isDiffEmpty } from "./diff";
 export { defaults } from "./defaults";
 export { omitNil, omitFalsy } from "./omitNil";
+export { deepFreeze } from "./deepFreeze";
+export type { DeepReadonly } from "./deepFreeze";

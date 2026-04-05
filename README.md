@@ -1186,6 +1186,7 @@ const zScore = (score - mean(scores)) / classStdDev;
 | `defaults` | `defaults<T>(target: T, ...sources: Partial<T>[]): T` | target의 `undefined` 속성만 source로 채움 (null·기존값 유지) |
 | `omitNil` | `omitNil<T>(obj: T): ...` | null·undefined 속성 제거 (0·false·"" 유지) |
 | `omitFalsy` | `omitFalsy<T>(obj: T): Partial<T>` | 모든 falsy 속성(null·undefined·0·false·"") 제거 |
+| `deepFreeze` | `deepFreeze<T>(obj: T): DeepReadonly<T>` | 객체를 재귀적으로 동결 — `Object.freeze()`의 깊은 버전. 순환 참조 안전 |
 
 반환 타입이 `Pick<T, K>` / `Omit<T, K>`로 정확히 추론되어 이후 코드에서 추가 타입 단언 불필요.
 
@@ -1366,6 +1367,23 @@ omitFalsy({ a: 1, b: null, c: 0, d: false, e: "", f: "hello" })
 // omitNil vs omitFalsy 선택 기준:
 // omitNil:   0·false·""가 의미 있는 값일 때 (수량, 토글, 빈 문자열 초기화)
 // omitFalsy: "있는 값"만 전달하면 될 때 (CSS 클래스 맵, 태그 필터 등)
+
+// deepFreeze — Object.freeze()의 깊은 버전 (런타임 + 컴파일 타임 불변성)
+const config = deepFreeze({
+  api: { url: "https://api.example.com", timeout: 5_000 },
+  features: { darkMode: true },
+});
+
+config.api.timeout = 0;   // TypeError: Cannot assign to read only property
+// TypeScript: config.api.timeout → readonly number
+
+// 테스트 픽스처 — 테스트 간 데이터 오염 방지
+const FIXTURE = deepFreeze({ id: 1, roles: ["admin", "user"] });
+FIXTURE.roles.push("hacker"); // TypeError — 테스트 격리 보장
+
+// DeepReadonly<T> 유틸리티 타입 단독 사용
+type Config = DeepReadonly<{ db: { host: string; port: number } }>;
+// → { readonly db: { readonly host: string; readonly port: number } }
 ```
 
 ---
