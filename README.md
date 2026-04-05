@@ -2327,6 +2327,57 @@ function createPost(body: unknown) {
 }
 ```
 
+### csv
+
+RFC 4180 기반 CSV 파서/포매터. quoted field(따옴표 내 쉼표·줄바꿈·이스케이프), 커스텀 구분자, 헤더 행, CRLF를 모두 지원한다. `csv-parse` 같은 외부 의존성 없이 일반적인 CSV 처리를 커버한다.
+
+| 함수 | 시그니처 | 설명 |
+|------|----------|------|
+| `parseCSV` | `parseCSV(input, options?): Record<string, string>[]` | CSV 문자열 → 레코드 배열 (header: true) |
+| `parseCSV` | `parseCSV(input, { header: false }): string[][]` | CSV 문자열 → 2차원 배열 |
+| `formatCSV` | `formatCSV(data, options?): string` | 레코드 배열 또는 2차원 배열 → CSV 문자열 |
+
+**ParseOptions**: `header` (기본 true) · `delimiter` (기본 `","`) · `trim` (기본 true) · `skipEmptyLines` (기본 true)
+
+**FormatOptions**: `delimiter` · `lineBreak` (`"\n"` / `"\r\n"`)
+
+```ts
+import { parseCSV, formatCSV } from "simple-ts-tools";
+
+// 파싱 — 헤더 포함 (기본)
+parseCSV(`name,age\nAlice,30\nBob,25`)
+// [{ name: "Alice", age: "30" }, { name: "Bob", age: "25" }]
+
+// quoted field — 쉼표, 줄바꿈, 따옴표 이스케이프 모두 처리
+parseCSV(`name,address\nAlice,"Seoul, Korea"`)
+// [{ name: "Alice", address: "Seoul, Korea" }]
+
+parseCSV(`bio\n"He said ""hello"""`)
+// [{ bio: 'He said "hello"' }]
+
+// 커스텀 구분자
+parseCSV("a;b\n1;2", { delimiter: ";" })
+// [{ a: "1", b: "2" }]
+
+// 2차원 배열로 파싱
+parseCSV("a,b\n1,2", { header: false })
+// [["a","b"], ["1","2"]]
+
+// 포매팅 — Record 배열 → CSV
+formatCSV([{ name: "Alice", age: 30 }, { name: "Bob", age: 25 }])
+// "name,age\nAlice,30\nBob,25"
+
+// 특수문자 자동 인용
+formatCSV([{ city: "Seoul, Korea", bio: 'He said "hi"' }])
+// 'city,bio\n"Seoul, Korea","He said ""hi"""'
+
+// parseCSV ↔ formatCSV 왕복 변환 (quoted fields 포함)
+const csv = formatCSV(records);
+const restored = parseCSV(csv); // 원본 복원
+```
+
+---
+
 ### color
 
 HEX ↔ RGB ↔ HSL 변환, 밝기·채도·투명도 조작, 색상 혼합. 별도 의존성 없이 UI 프로젝트에서 가장 자주 쓰는 색상 유틸리티를 제공한다.
