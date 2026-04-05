@@ -7,3 +7,5 @@ export { LinkedList } from "./linkedList";
 export type { ListNode } from "./linkedList";
 export { createRing } from "./ring";
 export type { Ring } from "./ring";
+export { createUndoStack } from "./undoStack";
+export type { UndoStack, UndoStackOptions } from "./undoStack";
