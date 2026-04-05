@@ -40,3 +40,5 @@ export { createTaskRunner } from "./taskRunner";
 export type { TaskRunner, TaskRunnerResult } from "./taskRunner";
 export { createClock } from "./clock";
 export type { Clock } from "./clock";
+export { createAbortScope, linkSignals, abortable } from "./abortScope";
+export type { AbortScope } from "./abortScope";
