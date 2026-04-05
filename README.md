@@ -538,6 +538,12 @@ isObject(new Date()); // false — 인스턴스는 제외
 | `range` | `range(start: number, end: number, step?: number): number[]` | [start, end) 범위의 숫자 배열 생성 |
 | `round` | `round(value: number, decimals?: number): number` | 소수 자릿수 반올림 (부동소수점 오차 보정) |
 | `toOrdinal` | `toOrdinal(n: number): string` | 숫자에 영어 서수 접미사 추가 (1st, 2nd, 3rd, 11th …) |
+| `sum` | `sum(nums: number[]): number` | 숫자 배열의 합 (빈 배열 → 0) |
+| `mean` | `mean(nums: number[]): number` | 산술 평균 (빈 배열 → NaN) |
+| `median` | `median(nums: number[]): number` | 중앙값 (빈 배열 → NaN, 원본 불변) |
+| `mode` | `mode(nums: number[]): number[]` | 최빈값 배열 (공동 최빈값 모두 반환) |
+| `variance` | `variance(nums: number[], sample?: boolean): number` | 분산 (기본: 모집단, sample=true: 표본) |
+| `stddev` | `stddev(nums: number[], sample?: boolean): number` | 표준편차 (기본: 모집단) |
 
 ```ts
 import { range, clamp } from "simple-ts-tools";
@@ -599,6 +605,25 @@ toOrdinal(112);  // "112th" ← 예외 (끝 두 자리 12)
 `${toOrdinal(rank)} place`;          // "1st place"
 `${toOrdinal(day)} of December`;     // "25th of December"
 rankings.map((u, i) => `${toOrdinal(i+1)}: ${u.name}`);
+
+// 통계 함수 — 대시보드, 성적 분석, 데이터 시각화
+const scores = [70, 80, 85, 90, 95];
+sum(scores);                          // 420
+mean(scores);                         // 84
+median(scores);                       // 85
+mode([1, 2, 2, 3]);                   // [2]
+mode([1, 1, 2, 2]);                   // [1, 2]  공동 최빈값
+
+// 분산 & 표준편차 — 데이터 분포도 측정
+const data = [2, 4, 4, 4, 5, 5, 7, 9];
+variance(data);               // 4       (모집단 분산, n으로 나눔)
+variance(data, true);         // 4.571   (표본 분산, n-1로 나눔 — Bessel 보정)
+stddev(data);                 // 2       (모집단 표준편차)
+stddev(data, true);           // 2.138   (표본 표준편차)
+
+// 실사용: 성적 편차 계산
+const classStdDev = stddev(scores);   // 8.60
+const zScore = (score - mean(scores)) / classStdDev;
 ```
 
 ---
@@ -624,6 +649,8 @@ rankings.map((u, i) => `${toOrdinal(i+1)}: ${u.name}`);
 | `omitBy` | `omitBy<T>(obj: T, predicate: (value, key) => boolean): Partial<T>` | predicate 통과 항목을 제외한 새 객체 반환 |
 | `pick` | `pick<T, K extends keyof T>(obj: T, keys: readonly K[]): Pick<T, K>` | 지정한 키만 추출한 새 객체 반환 |
 | `pickBy` | `pickBy<T>(obj: T, predicate: (value, key) => boolean): Partial<T>` | predicate 통과 항목만 추출한 새 객체 반환 |
+| `diff` | `diff(a, b: Record<string, unknown>): DiffResult` | 두 객체의 얕은 diff — added/removed/changed 반환 |
+| `isDiffEmpty` | `isDiffEmpty(result: DiffResult): boolean` | diff 결과에 변경사항이 없으면 true |
 
 반환 타입이 `Pick<T, K>` / `Omit<T, K>`로 정확히 추론되어 이후 코드에서 추가 타입 단언 불필요.
 
@@ -743,6 +770,29 @@ setIn({}, "a.b.c", 1);   // { a: { b: { c: 1 } } } (중간 경로 자동 생성)
 
 // 실사용: 폼 필드 개별 업데이트
 const form = setIn(currentForm, `items.${index}.quantity`, newQty);
+
+// 얕은 객체 diff — 폼 dirty 상태, 설정 변경 감지, 패치 생성
+const a = { keep: 1, remove: 2, change: "old" };
+const b = { keep: 1, add: 3,    change: "new" };
+const result = diff(a, b);
+result.added;    // { add: 3 }
+result.removed;  // { remove: 2 }
+result.changed;  // { change: { from: "old", to: "new" } }
+
+// 변경사항 없는지 빠른 확인
+isDiffEmpty(diff(initial, current));  // true → dirty 없음
+
+// 실사용: 폼 dirty state 감지
+const initial = { name: "Alice", email: "alice@example.com" };
+const current  = { name: "Bob",   email: "alice@example.com" };
+const d = diff(initial, current);
+if (!isDiffEmpty(d)) {
+  console.log("변경된 필드:", d.changed);  // { name: { from: "Alice", to: "Bob" } }
+}
+
+// PATCH 페이로드 생성 — 변경된 필드만 서버로 전송
+const patch = diff(original, edited).changed;
+api.patch("/user", Object.fromEntries(Object.entries(patch).map(([k, v]) => [k, v.to])));
 ```
 
 ---
@@ -1065,6 +1115,7 @@ dfs(tree);  // [4, 5, 2, 3, 1]
 | `formatDate` | `formatDate(date: Date, format: string): string` | 토큰 기반 날짜 포맷 변환 |
 | `formatRelativeTime` | `formatRelativeTime(date: Date, base?: Date, locale?: "ko"\|"en"): string` | 상대 시간 표시 ("3분 전", "2일 후") |
 | `parseDate` | `parseDate(input: string, locale?: "en-US"\|"en-GB"): Date \| null` | 다양한 형식의 날짜 문자열 → Date (실패 시 null) |
+| `formatDuration` | `formatDuration(ms: number, options?): string` | 밀리초 → 사람이 읽기 좋은 시간 문자열 (한/영 지원) |
 
 **지원 토큰**
 
@@ -1185,6 +1236,30 @@ isSameMonth(new Date("2024-06-01"), new Date("2024-07-01"));  // false
 // 실사용: 이번 달 매출 쿼리
 const [from, to] = [startOfMonth(new Date()), endOfMonth(new Date())];
 db.query("SELECT * FROM orders WHERE created_at BETWEEN ? AND ?", [from, to]);
+
+// formatDuration — 밀리초 → 사람이 읽기 좋은 시간 문자열
+formatDuration(90_000);                         // "1분 30초"
+formatDuration(3_661_000);                      // "1시간 1분"   (기본 2단위)
+formatDuration(3_661_000, { parts: 3 });        // "1시간 1분 1초"
+formatDuration(86_400_000);                     // "1일"
+formatDuration(500);                            // "< 1초"
+formatDuration(-90_000);                        // "1분 30초"   (음수 → 절댓값)
+
+// 영어 지원
+formatDuration(90_000, { locale: "en" });            // "1m 30s"
+formatDuration(3_661_000, { locale: "en", parts: 3 }); // "1h 1m 1s"
+formatDuration(500, { locale: "en" });               // "< 1s"
+
+// 실사용: 동영상 길이 표시
+formatDuration(5_400_000);    // "1시간 30분"
+formatDuration(600_000);      // "10분"
+
+// ETA(남은 시간) 표시
+const etaMs = uploadedBytes === 0 ? 0 : (totalBytes - uploadedBytes) / speed * 1000;
+`남은 시간: ${formatDuration(etaMs)}`;   // "2시간 3분"
+
+// 타이머 표시 — 단일 단위
+formatDuration(3_000, { parts: 1 });    // "3초"
 ```
 
 ---
