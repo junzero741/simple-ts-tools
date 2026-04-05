@@ -5,3 +5,13 @@ export { isArray, isBoolean, isDefined, isFunction, isNil, isNumber, isObject, i
 export { isUrl } from "./isUrl";
 export { is } from "./guard";
 export type { Guard } from "./guard";
+export {
+  assert,
+  assertDefined,
+  assertInstanceOf,
+  assertType,
+  unreachable,
+  softAssert,
+  assertInRange,
+  AssertionError,
+} from "./assert";
