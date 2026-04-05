@@ -26,3 +26,5 @@ export { orderBy } from "./orderBy";
 export { binarySearch, sortedIndex, sortedLastIndex } from "./binarySearch";
 export { comparing, naturalOrder, reverseOrder } from "./comparator";
 export type { Comparator, CompareOptions, Direction, NullsPosition } from "./comparator";
+export { diffArrays, diffChars, diffLines, hasDiff, applyDiff, diffStats } from "./diff";
+export type { DiffOp } from "./diff";
