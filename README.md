@@ -632,6 +632,7 @@ formatPhoneNumber("0212345678");  // "02-123-4567" (8자리 지역번호 형식)
 | `isEmpty` | `isEmpty(value: string \| null \| undefined): boolean` | 빈 문자열·공백·null·undefined이면 true |
 | `kebabToCamel` | `kebabToCamel(str: string): string` | kebab-case → camelCase |
 | `truncate` | `truncate(str: string, maxLength: number, suffix?: string): string` | maxLength 초과 시 suffix(기본 "…")를 붙여 잘라냄 |
+| `slugify` | `slugify(str: string, options?: SlugifyOptions): string` | 문자열을 URL-safe 슬러그로 변환 (악센트 제거, 특수 문자 제거) |
 
 ```ts
 import { isEmpty, truncate, capitalize } from "simple-ts-tools";
@@ -701,6 +702,20 @@ template("{{year}}년 {{month}}월 {{day}}일", { year: 2024, month: 6, day: 7 }
 // 정의되지 않은 변수는 빈 문자열
 template("Hello, {{name}}{{title}}!", { name: "Alice" });
 // "Hello, Alice!"
+
+// URL 슬러그 생성 — 블로그 포스트, 상품 URL, SEO 경로 생성
+slugify("Hello World");                          // "hello-world"
+slugify("café au lait");                         // "cafe-au-lait"  ← 악센트 제거
+slugify("résumé");                               // "resume"
+slugify("Chapter 2: Introduction!");             // "chapter-2-introduction"
+slugify("hello   world---test");                 // "hello-world-test" ← 연속 구분자 통합
+slugify("Hello World", { separator: "_" });      // "hello_world"
+slugify("Hello World", { lowercase: false });    // "Hello-World"
+
+// 실사용: 게시물 URL 생성
+const post = { title: "나의 첫 번째 포스트!" };
+const url = `/posts/${slugify(post.title)}`; // "/posts/" (한글 → 비라틴 제거)
+// 한글 포스트는 별도 인코딩 또는 영문 slug 필드 활용 권장
 ```
 
 ---
@@ -890,8 +905,20 @@ cache.has("a");       // true
 
 | 클래스 | 설명 |
 |--------|------|
+| `PriorityQueue<T>` | 이진 최소 힙 기반 우선순위 큐. priority 낮을수록 먼저 꺼냄. 동일 priority는 FIFO |
 | `Queue<T>` | FIFO 큐. dequeue O(1) (head 포인터 방식) |
 | `Stack<T>` | LIFO 스택. 모든 연산 O(1) |
+
+**PriorityQueue 메서드**
+
+| 메서드 / 프로퍼티 | 시그니처 | 설명 |
+|--------|----------|------|
+| `enqueue(value, priority)` | `(value: T, priority: number): void` | O(log n) 삽입 |
+| `dequeue()` | `(): T \| undefined` | O(log n) — 최소 priority 값 꺼내기 |
+| `peek()` | `(): T \| undefined` | O(1) — 제거 없이 다음 값 확인 |
+| `toArray()` | `(): T[]` | 우선순위 순으로 배열 반환 (비파괴) |
+| `.size` | `number` | 현재 요소 수 |
+| `.isEmpty` | `boolean` | 비어있는지 확인 |
 
 | 메서드 / 프로퍼티 | Queue | Stack | 설명 |
 |--------|-------|-------|------|
@@ -904,7 +931,34 @@ cache.has("a");       // true
 | `toArray()` | ✓ | ✓ | 배열로 변환 |
 
 ```ts
-import { Queue, Stack } from "simple-ts-tools";
+import { PriorityQueue, Queue, Stack } from "simple-ts-tools";
+
+// 작업 스케줄러 — 긴급도 기반 처리 (낮은 숫자 = 높은 우선순위)
+const scheduler = new PriorityQueue<Task>();
+scheduler.enqueue(sendEmail,     priority: 3);
+scheduler.enqueue(processPayment, priority: 1);  // 먼저 처리됨
+scheduler.enqueue(updateCache,   priority: 2);
+
+while (!scheduler.isEmpty) {
+  const task = scheduler.dequeue()!;
+  await task.run();
+}
+
+// 다익스트라 알고리즘 — 최단 거리 노드 우선 탐색
+const pq = new PriorityQueue<string>();
+pq.enqueue("A", 0);
+while (!pq.isEmpty) {
+  const node = pq.dequeue()!;
+  for (const [next, cost] of graph[node]) {
+    pq.enqueue(next, dist[node] + cost);
+  }
+}
+
+// 같은 priority → enqueue 순서 유지 (FIFO tiebreak)
+const pq2 = new PriorityQueue<string>();
+pq2.enqueue("first",  5);
+pq2.enqueue("second", 5);
+pq2.dequeue(); // "first"
 
 // BFS 직접 구현
 const queue = new Queue<TreeNode>([root]);
