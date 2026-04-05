@@ -58,3 +58,5 @@ export { batchProcess } from "./batchProcessor";
 export type { BatchOptions, BatchResult, BatchProgress, BatchError } from "./batchProcessor";
 export { createAsyncLock } from "./asyncLock";
 export type { AsyncLock } from "./asyncLock";
+export { createActor } from "./actor";
+export type { Actor } from "./actor";
