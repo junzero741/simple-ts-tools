@@ -56,3 +56,5 @@ export { retryPolicy } from "./retryPolicy";
 export type { RetryPolicy, RetryPolicyBuilder, RetryPolicyConfig } from "./retryPolicy";
 export { batchProcess } from "./batchProcessor";
 export type { BatchOptions, BatchResult, BatchProgress, BatchError } from "./batchProcessor";
+export { createAsyncLock } from "./asyncLock";
+export type { AsyncLock } from "./asyncLock";
