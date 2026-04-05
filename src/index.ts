@@ -4,6 +4,7 @@ export * from "./csv";
 export * from "./encoding";
 export * from "./env";
 export * from "./id";
+export * from "./iterator";
 export * from "./set";
 export * from "./async";
 export * from "./cache";
