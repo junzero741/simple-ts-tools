@@ -18,3 +18,5 @@ export { defaults } from "./defaults";
 export { omitNil, omitFalsy } from "./omitNil";
 export { deepFreeze } from "./deepFreeze";
 export type { DeepReadonly } from "./deepFreeze";
+export { createBuilder } from "./builder";
+export type { Builder } from "./builder";
