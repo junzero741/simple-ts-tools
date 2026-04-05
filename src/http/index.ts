@@ -6,3 +6,11 @@ export type {
   RequestConfig,
   InterceptorManager,
 } from "./httpClient";
+export { createApiClient, ApiError } from "./apiClient";
+export type {
+  ApiClient,
+  ApiClientOptions,
+  ApiResponse,
+  RequestConfig as ApiRequestConfig,
+  RequestOptions,
+} from "./apiClient";
