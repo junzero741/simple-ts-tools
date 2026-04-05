@@ -5,3 +5,5 @@ export { createStore } from "./store";
 export type { Store, Selected, SelectOptions } from "./store";
 export { createObservable, of, merge, createSubject, Observable } from "./observable";
 export type { Observer, Subscription } from "./observable";
+export { createEventBus } from "./eventBus";
+export type { EventBus, EventBusOptions, EventRecord, WaitForOptions } from "./eventBus";
