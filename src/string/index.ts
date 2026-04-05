@@ -12,3 +12,5 @@ export { template } from "./template";
 export { truncate } from "./truncate";
 export { pluralize, autoPlural } from "./pluralize";
 export { toCamelCase, toPascalCase, toTitleCase, toScreamingSnake } from "./changeCase";
+export { levenshteinDistance, similarity, fuzzyMatch, fuzzySearch } from "./fuzzy";
+export type { FuzzyResult, FuzzySearchOptions } from "./fuzzy";

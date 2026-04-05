@@ -1532,6 +1532,10 @@ formatPhoneNumber("0212345678");  // "02-123-4567" (8자리 지역번호 형식)
 | `toPascalCase` | `toPascalCase(str: string): string` | 어떤 형식이든 PascalCase로 변환 |
 | `toTitleCase` | `toTitleCase(str: string): string` | 어떤 형식이든 Title Case로 변환 (각 단어 첫 글자 대문자, 공백 구분) |
 | `toScreamingSnake` | `toScreamingSnake(str: string): string` | 어떤 형식이든 SCREAMING_SNAKE_CASE로 변환 |
+| `levenshteinDistance` | `levenshteinDistance(a, b, options?): number` | 레벤슈타인 편집 거리 (삽입·삭제·교체 최솟값). O(n·m) 시간, O(min(n,m)) 공간 |
+| `similarity` | `similarity(a, b, options?): number` | 0~1 정규화 유사도 점수 (편집 거리 ÷ max 길이) |
+| `fuzzyMatch` | `fuzzyMatch(text, pattern, options?): boolean` | 패턴의 모든 문자가 텍스트에 **순서대로** 존재하는지 (subsequence 포함 여부 — VS Code 스타일) |
+| `fuzzySearch` | `fuzzySearch<T>(items, query, options?): FuzzyResult<T>[]` | fuzzyMatch 필터 + similarity 점수 정렬. 자동완성·커맨드 팔레트·검색 UI에 바로 사용 가능 |
 
 ```ts
 import { isEmpty, truncate, capitalize } from "simple-ts-tools";
@@ -1713,6 +1717,37 @@ pluralize(5, "file", undefined, { showCount: false })  // "files"
 const badge = pluralize(unread, "notification", undefined, { showCount: false });
 document.title = unread > 0 ? `(${unread}) ${badge} — MyApp` : "MyApp";
 // "(3) notifications — MyApp" / "(1) notification — MyApp"
+
+// ─── 퍼지 검색
+
+// levenshteinDistance — 편집 거리 (오타 감지, "did you mean?" 기능)
+levenshteinDistance("kitten", "sitting")  // 3
+levenshteinDistance("acess", "access")   // 1
+levenshteinDistance("Hello", "hello", { caseSensitive: false }) // 0
+
+// similarity — 0~1 유사도 점수
+similarity("hello", "helo")    // 0.8
+similarity("apple", "orange")  // 0.143  (낮음 — 연관 없음)
+similarity("alice", "alice")   // 1
+
+// fuzzyMatch — subsequence 포함 여부 (VS Code 파일 탐색 스타일)
+fuzzyMatch("RequestBuilder.ts", "rb")    // true  (R...B...)
+fuzzyMatch("components/Button.tsx", "btn") // true
+fuzzyMatch("index.ts", "rb")             // false
+
+// fuzzySearch — 자동완성 / 커맨드 팔레트 / 검색 UI
+const files = ["RequestBuilder.ts", "ResponseHandler.ts", "Button.tsx", "index.ts"];
+fuzzySearch(files, "rb", { limit: 3 })
+// [{ item: "RequestBuilder.ts", score: ..., matched: true }, ...]
+
+// 객체 배열 검색 — keyFn으로 검색 키 지정
+const users = [{ id: 1, name: "Alice" }, { id: 2, name: "Alan" }, { id: 3, name: "Bob" }];
+fuzzySearch(users, "al", { keyFn: u => u.name, threshold: 0.3 })
+// [{ item: { id: 1, name: "Alice" }, score: 0.6, matched: true }, ...]
+
+// 오타 허용 검색 (threshold 낮게 설정)
+fuzzySearch(["Alice", "Bob", "Charlie"], "alic", { threshold: 0.4 })
+// Alice가 최상단
 ```
 
 ---
