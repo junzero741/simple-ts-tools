@@ -1,12 +1,15 @@
 export { chunk } from "./chunk";
 export { compact } from "./compact";
 export { countBy } from "./countBy";
-export { keyBy } from "./keyBy";
 export { difference } from "./difference";
 export { flatten } from "./flatten";
 export { groupBy } from "./groupBy";
 export { intersection } from "./intersection";
+export { keyBy } from "./keyBy";
+export { maxBy, minBy } from "./minBy";
+export { partition } from "./partition";
 export { sortBy } from "./sortBy";
+export { sum, sumBy } from "./sumBy";
 export { tuple } from "./tuple";
 export { unique } from "./unique";
 export { zip } from "./zip";

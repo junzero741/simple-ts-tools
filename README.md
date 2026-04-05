@@ -19,6 +19,11 @@ pnpm add simple-ts-tools
 | `countBy` | `countBy<T, K>(arr: T[], keyFn: (item: T) => K): Partial<Record<K, number>>` | 키 기준으로 등장 횟수 집계 |
 | `difference` | `difference<T>(a: T[], b: T[], keyFn?): T[]` | a에만 있는 요소 반환 (차집합) |
 | `keyBy` | `keyBy<T, K>(arr: T[], keyFn: (item: T) => K): Record<K, T>` | 배열을 키 함수 기준 Record로 변환 (O(1) 조회용) |
+| `maxBy` | `maxBy<T>(arr: T[], keyFn: (item: T) => number): T \| undefined` | keyFn 값이 가장 큰 요소 반환 |
+| `minBy` | `minBy<T>(arr: T[], keyFn: (item: T) => number): T \| undefined` | keyFn 값이 가장 작은 요소 반환 |
+| `partition` | `partition<T>(arr: T[], predicate): [T[], T[]]` | predicate 기준으로 두 배열로 분리 (타입 가드 지원) |
+| `sum` | `sum(arr: number[]): number` | 숫자 배열의 합 |
+| `sumBy` | `sumBy<T>(arr: T[], keyFn: (item: T) => number): number` | keyFn으로 추출한 값들의 합 |
 | `flatten` | `flatten<T>(arr: T[], depth?: number): FlatArray<T[], number>[]` | 중첩 배열 펼치기 (기본: 1단계) |
 | `groupBy` | `groupBy<T, K>(arr: T[], keyFn: (item: T) => K): Partial<Record<K, T[]>>` | 키 추출 함수 기준으로 그룹핑 |
 | `intersection` | `intersection<T>(a: T[], b: T[], keyFn?): T[]` | 양쪽 모두에 있는 요소 반환 (교집합) |
@@ -102,6 +107,25 @@ countBy(users, u => u.role);
 
 countBy([1, 2, 3, 4, 5, 6], n => n % 2 === 0 ? "even" : "odd");
 // { odd: 3, even: 3 }
+
+// 조건으로 배열 둘로 분리 — filter 두 번 대신 한 번의 순회로 처리
+const [active, inactive] = partition(users, u => u.isActive);
+const [passed, failed] = partition(scores, s => s >= 60);
+
+// 타입 가드로 타입 좁히기
+const values: (string | number)[] = [1, "a", 2, "b"];
+const [strings, nums] = partition(values, (v): v is string => typeof v === "string");
+// strings: string[], nums: number[]
+
+// 최솟값 / 최댓값 요소 찾기 — sort 없이 O(n)
+minBy(products, p => p.price);           // 가장 저렴한 상품
+maxBy(articles, a => a.views);           // 조회수 가장 높은 글
+minBy(events, e => e.startAt.getTime()); // 가장 이른 일정
+
+// 합산
+sum([1, 2, 3, 4, 5]);                         // 15
+sumBy(cart, item => item.price * item.qty);   // 장바구니 총액
+sumBy(tasks, t => t.estimatedHours);          // 총 예상 시간
 ```
 
 ---
