@@ -32,3 +32,5 @@ export { createCommandHistory } from "./commandHistory";
 export type { Command, CommandHistory, CommandHistoryOptions } from "./commandHistory";
 export { createPluginSystem } from "./pluginSystem";
 export type { PluginSystem, PluginDef } from "./pluginSystem";
+export { createRuleEngine } from "./ruleEngine";
+export type { RuleEngine, Rule } from "./ruleEngine";
