@@ -19,3 +19,7 @@ export {
   fibonacci, modPow,
   isPowerOfTwo, nextPowerOfTwo, isCoprime,
 } from "./math.advanced";
+export {
+  preciseAdd, preciseSubtract, preciseMultiply, preciseDivide,
+  preciseRound, bankersRound, splitAmount, roundTo,
+} from "./bigMath";
