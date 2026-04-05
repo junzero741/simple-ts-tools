@@ -19,6 +19,7 @@ pnpm add simple-ts-tools
 | `first` | `first<T>(arr: T[]): T \| undefined` | 첫 번째 요소 반환 (빈 배열 → `undefined`) |
 | `last` | `last<T>(arr: T[]): T \| undefined` | 마지막 요소 반환 (빈 배열 → `undefined`) |
 | `move` | `move<T>(arr: T[], from: number, to: number): T[]` | 요소를 from → to 인덱스로 이동 (비파괴) |
+| `paginate` | `paginate<T>(arr: T[], page: number, pageSize: number): PaginationResult<T>` | 배열 페이지네이션 (data·total·totalPages·hasNext·hasPrev) |
 | `toggle` | `toggle<T>(arr: T[], item: T, keyFn?): T[]` | 없으면 추가, 있으면 제거 (비파괴) |
 | `countBy` | `countBy<T, K>(arr: T[], keyFn: (item: T) => K): Partial<Record<K, number>>` | 키 기준으로 등장 횟수 집계 |
 | `difference` | `difference<T>(a: T[], b: T[], keyFn?): T[]` | a에만 있는 요소 반환 (차집합) |
@@ -163,6 +164,19 @@ toggle(["react", "typescript"], "react");   // ["typescript"]
 const selected = [{ id: 1 }, { id: 2 }];
 toggle(selected, { id: 2 }, x => x.id);  // [{ id: 1 }]      (제거)
 toggle(selected, { id: 3 }, x => x.id);  // [..., { id: 3 }] (추가)
+
+// 페이지네이션 — 리스트 UI에서 매번 직접 계산하던 것을 한 번에
+const posts = Array.from({ length: 53 }, (_, i) => ({ id: i + 1 }));
+
+const page1 = paginate(posts, 1, 10);
+// { data: [{id:1},...,{id:10}], total: 53, page: 1, pageSize: 10,
+//   totalPages: 6, hasNext: true, hasPrev: false }
+
+const page6 = paginate(posts, 6, 10);
+// { data: [{id:51},{id:52},{id:53}], hasNext: false, hasPrev: true }
+
+// 실사용: React 컴포넌트
+const { data, totalPages, hasNext, hasPrev } = paginate(allItems, currentPage, 20);
 ```
 
 ---
@@ -523,6 +537,7 @@ isObject(new Date()); // false — 인스턴스는 제외
 | `randomInt` | `randomInt(min: number, max: number): number` | [min, max] 범위의 정수 난수 (양 끝 포함) |
 | `range` | `range(start: number, end: number, step?: number): number[]` | [start, end) 범위의 숫자 배열 생성 |
 | `round` | `round(value: number, decimals?: number): number` | 소수 자릿수 반올림 (부동소수점 오차 보정) |
+| `toOrdinal` | `toOrdinal(n: number): string` | 숫자에 영어 서수 접미사 추가 (1st, 2nd, 3rd, 11th …) |
 
 ```ts
 import { range, clamp } from "simple-ts-tools";
@@ -570,6 +585,20 @@ percentage(10, 0);              // 0   ← total=0 안전 처리
 // 실사용: 업로드 진행률
 const progress = percentage(uploadedBytes, totalBytes, 1);
 // "74.5%"
+
+// 영어 서수 — 리더보드, 순위, 날짜 표시
+toOrdinal(1);    // "1st"
+toOrdinal(2);    // "2nd"
+toOrdinal(3);    // "3rd"
+toOrdinal(4);    // "4th"
+toOrdinal(11);   // "11th"  ← 예외
+toOrdinal(21);   // "21st"
+toOrdinal(112);  // "112th" ← 예외 (끝 두 자리 12)
+
+// 실사용
+`${toOrdinal(rank)} place`;          // "1st place"
+`${toOrdinal(day)} of December`;     // "25th of December"
+rankings.map((u, i) => `${toOrdinal(i+1)}: ${u.name}`);
 ```
 
 ---
@@ -1326,6 +1355,82 @@ buildQueryString({ page: 1, filter: null, sort: undefined });
 const current = parseQueryString(location.search);
 const updated = buildQueryString({ ...current, page: 2 });
 router.push(`/list?${updated}`);
+```
+
+---
+
+### validation
+
+컴포저블 스키마 검증. `Rule<T>` 배열로 스키마를 정의하고, `validate()`로 한 번에 실행한다.
+각 필드에서 첫 번째로 실패한 규칙의 메시지만 반환한다.
+
+**내장 규칙**
+
+| 규칙 | 설명 |
+|------|------|
+| `required(msg?)` | null · undefined · 빈 문자열 · 빈 배열 거부 |
+| `minLength(n, msg?)` | 문자열 최소 길이 |
+| `maxLength(n, msg?)` | 문자열 최대 길이 |
+| `minValue(n, msg?)` | 숫자 최솟값 |
+| `maxValue(n, msg?)` | 숫자 최댓값 |
+| `pattern(regex, msg?)` | 정규식 패턴 |
+| `emailRule(msg?)` | 이메일 형식 |
+| `urlRule(msg?)` | URL 형식 (`new URL()` 기반) |
+| `minItems(n, msg?)` | 배열 최소 항목 수 |
+| `maxItems(n, msg?)` | 배열 최대 항목 수 |
+| `oneOf(allowed, msg?)` | 허용 값 목록 |
+| `custom(predicate, msg)` | 커스텀 조건 함수 |
+
+```ts
+import { validate, required, minLength, maxLength, emailRule, minValue, oneOf, custom } from "simple-ts-tools";
+
+// 회원가입 폼 스키마 정의
+const signupSchema = {
+  username: [
+    required(),
+    minLength(3),
+    maxLength(20),
+    pattern(/^\w+$/, "영문·숫자·_만 사용 가능합니다"),
+    custom(v => v !== "admin", "예약된 이름은 사용할 수 없습니다"),
+  ],
+  email:    [required(), emailRule()],
+  password: [required(), minLength(8, "비밀번호는 8자 이상이어야 합니다")],
+  role:     [oneOf(["user", "admin"])],
+};
+
+const result = validate(formData, signupSchema);
+
+if (result.valid) {
+  // 타입 좁혀짐: valid === true이면 errors 없음
+  submitForm(formData);
+} else {
+  // errors 객체: 각 필드 → 첫 번째 실패 메시지
+  setErrors(result.errors);
+  // { username: "3자 이상 입력해주세요", email: "이메일 형식이 올바르지 않습니다" }
+}
+
+// 커스텀 규칙 조합 — 비밀번호 확인
+const pwSchema = {
+  password:        [required(), minLength(8)],
+  passwordConfirm: [
+    required(),
+    custom(v => v === formData.password, "비밀번호가 일치하지 않습니다"),
+  ],
+};
+
+// 배열 필드 검증
+const tagSchema = {
+  tags: [required(), minItems(1, "태그를 1개 이상 선택해주세요"), maxItems(5)],
+};
+
+// API 입력 검증에도 동일하게 사용
+function createPost(body: unknown) {
+  const result = validate(body as Record<string, unknown>, {
+    title: [required(), minLength(1), maxLength(100)],
+    content: [required(), minLength(10)],
+  });
+  if (!result.valid) throw new Error(JSON.stringify(result.errors));
+}
 ```
 
 ---

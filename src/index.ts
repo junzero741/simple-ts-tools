@@ -15,3 +15,4 @@ export * from "./result";
 export * from "./storage";
 export * from "./string";
 export * from "./tree";
+export * from "./validation";

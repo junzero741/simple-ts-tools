@@ -1,5 +1,7 @@
 export { chunk } from "./chunk";
 export { first, last, move, toggle } from "./extras";
+export { paginate } from "./paginate";
+export type { PaginationResult } from "./paginate";
 export { compact } from "./compact";
 export { countBy } from "./countBy";
 export { difference } from "./difference";
