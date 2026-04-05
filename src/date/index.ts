@@ -20,3 +20,4 @@ export { formatDate } from "./formatDate";
 export { parseDate } from "./parseDate";
 export { formatRelativeTime } from "./formatRelativeTime";
 export { formatDuration } from "./formatDuration";
+export { addBusinessDays, getBusinessDayCount, nextBusinessDay, prevBusinessDay } from "./businessDays";

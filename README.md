@@ -1208,6 +1208,10 @@ dfs(tree);  // [4, 5, 2, 3, 1]
 | `formatRelativeTime` | `formatRelativeTime(date: Date, base?: Date, locale?: "ko"\|"en"): string` | 상대 시간 표시 ("3분 전", "2일 후") |
 | `parseDate` | `parseDate(input: string, locale?: "en-US"\|"en-GB"): Date \| null` | 다양한 형식의 날짜 문자열 → Date (실패 시 null) |
 | `formatDuration` | `formatDuration(ms: number, options?): string` | 밀리초 → 사람이 읽기 좋은 시간 문자열 (한/영 지원) |
+| `addBusinessDays` | `addBusinessDays(date: Date, days: number): Date` | 주말을 건너뛰어 n 영업일 후/전 날짜 반환 (음수 지원) |
+| `getBusinessDayCount` | `getBusinessDayCount(a: Date, b: Date): number` | 두 날짜 사이의 영업일 수 (양 끝 포함, 주말 제외) |
+| `nextBusinessDay` | `nextBusinessDay(date: Date): Date` | 가장 가까운 다음 영업일 (이미 영업일이면 그대로) |
+| `prevBusinessDay` | `prevBusinessDay(date: Date): Date` | 가장 가까운 이전 영업일 (이미 영업일이면 그대로) |
 
 **지원 토큰**
 
@@ -1328,6 +1332,38 @@ isSameMonth(new Date("2024-06-01"), new Date("2024-07-01"));  // false
 // 실사용: 이번 달 매출 쿼리
 const [from, to] = [startOfMonth(new Date()), endOfMonth(new Date())];
 db.query("SELECT * FROM orders WHERE created_at BETWEEN ? AND ?", [from, to]);
+
+// 영업일 계산 — 주말(토·일)을 자동으로 건너뜀
+// 금요일 + 1 영업일 = 다음 주 월요일
+addBusinessDays(new Date("2024-06-07"), 1);   // 2024-06-10 (월)
+addBusinessDays(new Date("2024-06-07"), 3);   // 2024-06-12 (수)
+
+// 음수 — n 영업일 전
+addBusinessDays(new Date("2024-06-10"), -3);  // 2024-06-05 (수)
+
+// 영업일 수 계산 (양 끝 포함)
+getBusinessDayCount(new Date("2024-06-10"), new Date("2024-06-14")); // 5 (월~금)
+getBusinessDayCount(new Date("2024-06-10"), new Date("2024-06-21")); // 10 (2주)
+
+// 주말이면 다음/이전 영업일로 조정
+nextBusinessDay(new Date("2024-06-08")); // 2024-06-10 (토 → 월)
+prevBusinessDay(new Date("2024-06-09")); // 2024-06-07 (일 → 금)
+
+// 실사용: e-커머스 배송 예상일 (주문일 기준 3 영업일 후)
+const deliveryDate = addBusinessDays(orderDate, 3);
+`예상 배송일: ${formatDate(deliveryDate, "M월 D일 (ddd)")}`;
+
+// 실사용: 계약 만료 30 영업일 전 알림 발송
+const alertDate = addBusinessDays(contractExpiry, -30);
+if (isSameDay(alertDate, new Date())) sendRenewalAlert();
+
+// 실사용: SLA 기준 처리 기한 계산
+const deadline = addBusinessDays(ticketCreatedAt, 5); // 5 영업일 이내 처리
+
+// 실사용: 프로젝트 일정 (공휴일 미포함)
+const sprintEnd = addBusinessDays(sprintStart, 10); // 2주 스프린트
+const workingDays = getBusinessDayCount(projectStart, projectEnd);
+`총 ${workingDays} 영업일`;
 
 // formatDuration — 밀리초 → 사람이 읽기 좋은 시간 문자열
 formatDuration(90_000);                         // "1분 30초"
