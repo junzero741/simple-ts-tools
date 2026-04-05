@@ -27,3 +27,4 @@ export {
   escapeSql,
 } from "./sanitize";
 export { globMatch, createGlobMatcher } from "./glob";
+export { dedent, indent, reindent, trimTrailingWhitespace, collapseBlankLines } from "./dedent";
