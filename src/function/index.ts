@@ -19,4 +19,6 @@ export { createInjector } from "./injector";
 export type { Injector, Scope, FactoryOptions } from "./injector";
 export { createFSM } from "./fsm";
 export type { FSM, FSMConfig, Transition, StateConfig } from "./fsm";
+export { createMemo, computed } from "./memo";
+export type { Memo } from "./memo";
 export type { Middleware, MiddlewareFn } from "./middleware";
