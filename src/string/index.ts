@@ -30,3 +30,5 @@ export { globMatch, createGlobMatcher } from "./glob";
 export { dedent, indent, reindent, trimTrailingWhitespace, collapseBlankLines } from "./dedent";
 export { naturalCompare, naturalCompareInsensitive, naturalSort, naturalSortBy } from "./naturalSort";
 export { createCuid, createNanoId, createPrefixedId, createSortableId, createHumanCode } from "./cuid";
+export { createTokenizer } from "./tokenizer";
+export type { Tokenizer, Token, TokenRule } from "./tokenizer";
