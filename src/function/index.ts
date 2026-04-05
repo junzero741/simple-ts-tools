@@ -28,3 +28,5 @@ export { createFeatureFlags } from "./featureFlags";
 export type { FeatureFlags, FlagValue } from "./featureFlags";
 export { contract, withInvariant, ContractError } from "./contract";
 export type { ContractOptions } from "./contract";
+export { createCommandHistory } from "./commandHistory";
+export type { Command, CommandHistory, CommandHistoryOptions } from "./commandHistory";
