@@ -30,3 +30,5 @@ export type {
 } from "./circuitBreaker";
 export { createPool } from "./pool";
 export type { Pool, PoolOptions, PoolStats } from "./pool";
+export { createSemaphore } from "./semaphore";
+export type { Semaphore } from "./semaphore";
