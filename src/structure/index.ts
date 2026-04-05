@@ -14,3 +14,5 @@ export { createGraph } from "./graph";
 export type { Graph, Edge, GraphOptions } from "./graph";
 export { BloomFilter } from "./bloomFilter";
 export { HashMap } from "./hashMap";
+export { SortedArray } from "./sortedArray";
+export type { CompareFn } from "./sortedArray";
