@@ -3,6 +3,7 @@ export * from "./color";
 export * from "./csv";
 export * from "./env";
 export * from "./id";
+export * from "./set";
 export * from "./async";
 export * from "./cache";
 export * from "./date";

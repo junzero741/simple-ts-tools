@@ -1430,6 +1430,65 @@ const users = mapResult(data, us => us.filter(u => u.active));
 
 ---
 
+### set
+
+네이티브 `Set`을 위한 집합 연산 유틸리티. 배열 변환 없이 O(n) 순회와 O(1) 조회를 유지하며, 모든 함수는 입력 Set을 수정하지 않는 **불변(non-destructive)** 함수다.
+
+| 함수 | 시그니처 | 설명 |
+|------|----------|------|
+| `setUnion` | `setUnion<T>(a, b): Set<T>` | 합집합 — a ∪ b |
+| `setIntersection` | `setIntersection<T>(a, b): Set<T>` | 교집합 — a ∩ b |
+| `setDifference` | `setDifference<T>(a, b): Set<T>` | 차집합 — a에만 있는 원소 (a − b) |
+| `setSymmetricDifference` | `setSymmetricDifference<T>(a, b): Set<T>` | 대칭 차집합 — 한 쪽에만 있는 원소 |
+| `isSubset` | `isSubset<T>(a, b): boolean` | a ⊆ b — a의 모든 원소가 b에 존재 |
+| `isSuperset` | `isSuperset<T>(a, b): boolean` | a ⊇ b — b의 모든 원소가 a에 존재 |
+| `isDisjoint` | `isDisjoint<T>(a, b): boolean` | 서로소 — 공통 원소 없음 |
+| `setEquals` | `setEquals<T>(a, b): boolean` | 두 Set이 동일한지 (순서 무관) |
+| `setUnionAll` | `setUnionAll<T>(sets): Set<T>` | 여러 Set의 합집합 |
+| `setIntersectionAll` | `setIntersectionAll<T>(sets): Set<T>` | 여러 Set의 교집합 |
+
+```ts
+import { setUnion, setIntersection, setDifference, isSubset, isDisjoint } from "simple-ts-tools";
+
+const a = new Set([1, 2, 3]);
+const b = new Set([2, 3, 4]);
+
+setUnion(a, b)                  // Set { 1, 2, 3, 4 }
+setIntersection(a, b)           // Set { 2, 3 }
+setDifference(a, b)             // Set { 1 }       (a에만 있음)
+setDifference(b, a)             // Set { 4 }       (b에만 있음)
+setSymmetricDifference(a, b)    // Set { 1, 4 }    (한 쪽에만 있음)
+
+isSubset(new Set([1, 2]), a)    // true
+isSuperset(a, new Set([1, 2]))  // true
+isDisjoint(new Set([1, 2]), new Set([3, 4]))  // true
+setEquals(new Set([1, 2, 3]), new Set([3, 1, 2]))  // true (순서 무관)
+
+// 여러 Set 한 번에 처리
+setUnionAll([new Set([1,2]), new Set([2,3]), new Set([3,4])])
+// Set { 1, 2, 3, 4 }
+
+setIntersectionAll([new Set([1,2,3]), new Set([2,3,4]), new Set([3,4,5])])
+// Set { 3 }
+
+// ─── 실사용 시나리오
+
+// 권한 검사 — 요청 권한이 부여된 권한에 모두 포함되는지
+const required = new Set(["read", "write"]);
+const granted  = new Set(["read", "write", "delete"]);
+isSubset(required, granted)  // true → 허용
+
+// 태그 필터링 — 선택 태그가 하나라도 포함된 포스트
+const filter = new Set(["react"]);
+posts.filter(p => !isDisjoint(p.tags, filter))
+
+// 변경 감지 — before/after 비교로 추가/삭제 항목 추출
+const added   = setDifference(after, before);   // 새로 추가된
+const removed = setDifference(before, after);   // 제거된
+```
+
+---
+
 ### storage
 
 JSON 직렬화·TTL·네임스페이스를 지원하는 타입 안전 localStorage/sessionStorage 래퍼.
