@@ -41,6 +41,7 @@ pnpm add simple-ts-tools
 | `zip` | `zip<T extends unknown[][]>(...arrays: T): [...][]` | 여러 배열을 인덱스 기준으로 묶음 (최단 길이 기준) |
 | `windows` | `windows<T>(arr: T[], size: number, options?): T[][]` | 크기 size의 슬라이딩 윈도우 배열 (이동평균·n-gram 등) |
 | `pairwise` | `pairwise<T>(arr: T[]): [T, T][]` | 인접한 두 요소의 쌍 배열 (`windows(arr, 2)` 축약형) |
+| `rotate` | `rotate<T>(arr: T[], n: number): T[]` | 배열을 왼쪽(양수)/오른쪽(음수)으로 n칸 회전 (비파괴) |
 | `take` | `take<T>(arr: T[], n: number): T[]` | 앞에서 n개 반환 |
 | `drop` | `drop<T>(arr: T[], n: number): T[]` | 앞에서 n개 제거한 나머지 반환 |
 | `takeLast` | `takeLast<T>(arr: T[], n: number): T[]` | 뒤에서 n개 반환 |
@@ -202,6 +203,19 @@ pairwise([100, 110, 105, 120]).map(([prev, curr]) =>
 
 // 연속 이벤트 간 시간 간격
 pairwise(timestamps).map(([a, b]) => b - a);
+
+// rotate — 배열 순환 이동 (비파괴)
+rotate([1, 2, 3, 4, 5], 2)    // [3, 4, 5, 1, 2]  — 왼쪽으로 2칸
+rotate([1, 2, 3, 4, 5], -1)   // [5, 1, 2, 3, 4]  — 오른쪽으로 1칸
+rotate([1, 2, 3], 100)         // [2, 3, 1]         — 자동 정규화 (100 % 3 = 1)
+
+// 캐러셀 슬라이드 — 다음/이전
+const next = rotate(slides, 1);    // 첫 슬라이드가 끝으로
+const prev = rotate(slides, -1);   // 마지막 슬라이드가 앞으로
+
+// 라운드로빈 담당자 배정
+const nextRound = rotate(workers, currentTurn + 1);
+nextRound[0]; // 다음 담당자
 
 // take / drop — 앞에서 자르기
 take([1, 2, 3, 4, 5], 3);    // [1, 2, 3]
@@ -1315,6 +1329,8 @@ dfs(tree);  // [4, 5, 2, 3, 1]
 | `formatRelativeTime` | `formatRelativeTime(date: Date, base?: Date, locale?: "ko"\|"en"): string` | 상대 시간 표시 ("3분 전", "2일 후") |
 | `parseDate` | `parseDate(input: string, locale?: "en-US"\|"en-GB"): Date \| null` | 다양한 형식의 날짜 문자열 → Date (실패 시 null) |
 | `formatDuration` | `formatDuration(ms: number, options?): string` | 밀리초 → 사람이 읽기 좋은 시간 문자열 (한/영 지원) |
+| `dateRange` | `dateRange(start: Date, end: Date, step?: number): Date[]` | 두 날짜 사이의 날짜 배열 (양 끝 포함, step은 일 단위) |
+| `monthRange` | `monthRange(start: Date, end: Date): Date[]` | 두 날짜 사이의 월 배열 (각 월의 1일 00:00:00) |
 | `addBusinessDays` | `addBusinessDays(date: Date, days: number): Date` | 주말을 건너뛰어 n 영업일 후/전 날짜 반환 (음수 지원) |
 | `getBusinessDayCount` | `getBusinessDayCount(a: Date, b: Date): number` | 두 날짜 사이의 영업일 수 (양 끝 포함, 주말 제외) |
 | `nextBusinessDay` | `nextBusinessDay(date: Date): Date` | 가장 가까운 다음 영업일 (이미 영업일이면 그대로) |
@@ -1439,6 +1455,36 @@ isSameMonth(new Date("2024-06-01"), new Date("2024-07-01"));  // false
 // 실사용: 이번 달 매출 쿼리
 const [from, to] = [startOfMonth(new Date()), endOfMonth(new Date())];
 db.query("SELECT * FROM orders WHERE created_at BETWEEN ? AND ?", [from, to]);
+
+// dateRange — 날짜 배열 생성 (캘린더, 차트, 스케줄)
+dateRange(new Date("2024-06-01"), new Date("2024-06-05"))
+// [Jun1, Jun2, Jun3, Jun4, Jun5]  (시각은 00:00:00으로 정규화)
+
+// step으로 간격 조정
+dateRange(new Date("2024-06-01"), new Date("2024-06-10"), 3)
+// [Jun1, Jun4, Jun7, Jun10]
+
+// 실사용: 캘린더 월간 뷰
+const days = dateRange(startOfMonth(now), endOfMonth(now));
+// 30개 날짜 → 각 칸에 날짜/이벤트 렌더링
+
+// 실사용: 최근 7일 차트 X축
+const xAxis = dateRange(subDays(new Date(), 6), new Date());
+// 7개 Date → formatDate로 레이블 생성
+
+// 실사용: 주간 스케줄 뷰 (step=7)
+const weeks = dateRange(startOfYear, endOfYear, 7);
+
+// monthRange — 월 배열 생성 (연간 차트, 월간 리포트)
+monthRange(new Date("2024-01-15"), new Date("2024-04-10"))
+// [Jan1, Feb1, Mar1, Apr1]  — 각 월의 1일로 정규화
+
+// 실사용: 연간 12개월 매출 차트
+const months = monthRange(new Date("2024-01-01"), new Date("2024-12-31"));
+months.map(m => ({ label: formatDate(m, "M월"), value: getSalesForMonth(m) }));
+
+// 실사용: 최근 6개월 추이
+const sixMonths = monthRange(addMonths(new Date(), -5), new Date());
 
 // 영업일 계산 — 주말(토·일)을 자동으로 건너뜀
 // 금요일 + 1 영업일 = 다음 주 월요일
