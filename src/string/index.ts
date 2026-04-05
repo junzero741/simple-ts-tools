@@ -26,3 +26,4 @@ export {
   normalizeWhitespace,
   escapeSql,
 } from "./sanitize";
+export { globMatch, createGlobMatcher } from "./glob";
