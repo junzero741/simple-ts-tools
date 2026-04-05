@@ -13,4 +13,6 @@ export {
   urlRule,
   validate,
 } from "./validation";
-export type { Rule, Schema, ValidationResult } from "./validation";
+export type { Rule, Schema as ValidationSchema, ValidationResult } from "./validation";
+export { s } from "./schema";
+export type { Schema, ParseResult, SchemaError } from "./schema";
