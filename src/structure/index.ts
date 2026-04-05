@@ -17,3 +17,5 @@ export { HashMap } from "./hashMap";
 export { SortedArray } from "./sortedArray";
 export type { CompareFn } from "./sortedArray";
 export { Multimap } from "./multimap";
+export { createVersionedMap } from "./versionedMap";
+export type { VersionedMap } from "./versionedMap";
