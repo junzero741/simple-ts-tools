@@ -335,6 +335,7 @@ arr.slice(sortedIndex(arr, 3), sortedLastIndex(arr, 3)); // [3, 3, 3]
 | `createBatch` | `createBatch<K, V>(batchFn, options?): Batcher<K, V>` | DataLoader 패턴 — 같은 틱의 `load(key)` 호출을 자동으로 묶어 단일 배치 함수로 처리 |
 | `poll` | `poll<T>(fn, predicate, options?): Promise<T>` | 조건이 충족될 때까지 비동기 함수를 반복 호출 (`retry`는 실패 재시도, `poll`은 정상 응답 검사) |
 | `pLimit` | `pLimit(concurrency): Limiter` | 동시에 실행할 비동기 작업 수를 제한하는 concurrency limiter — `activeCount`/`pendingCount`/`clearQueue()` 제공 |
+| `createRateLimiter` | `createRateLimiter(options): RateLimiter` | 토큰 버킷 기반 시간당 호출 수 제한 — `acquire()`/`tryAcquire()`/`reset()` 제공 |
 
 **MemoizeAsyncOptions**
 
@@ -343,6 +344,13 @@ arr.slice(sortedIndex(arr, 3), sortedLastIndex(arr, 3)); // [3, 3, 3]
 | `ttl` | `number` | — | 캐시 만료 시간 (ms). 미지정 시 영구 캐시 |
 | `maxSize` | `number` | — | 최대 캐시 항목 수. 초과 시 FIFO 제거 |
 | `keyFn` | `(...args) => string` | `JSON.stringify` | 캐시 키 생성 함수 |
+
+**RateLimiterOptions**
+
+| 옵션 | 타입 | 설명 |
+|------|------|------|
+| `limit` | `number` | 시간 창(window) 내 최대 허용 횟수 (양의 정수) |
+| `window` | `number` | 시간 창 크기 (ms). `window/limit` ms마다 토큰 1개 보충 |
 
 **RetryOptions**
 
@@ -549,6 +557,39 @@ console.log(limit.pendingCount); // 대기 중인 작업 수
 
 // 긴급 취소 — 남은 큐 비우기 (실행 중인 작업은 그대로 완료)
 limit.clearQueue();
+```
+
+```ts
+import { createRateLimiter } from "simple-ts-tools";
+
+// 초당 10회 호출 제한 (100ms마다 토큰 1개 보충)
+const rate = createRateLimiter({ limit: 10, window: 1000 });
+
+// API 클라이언트에서 rate limit 준수
+async function fetchUser(id: string) {
+  await rate.acquire();           // 토큰 없으면 자동 대기
+  return fetch(`/api/users/${id}`);
+}
+
+// 토큰이 없으면 대기 없이 즉시 false 반환 (non-blocking 체크)
+if (!rate.tryAcquire()) {
+  console.log("rate limit 초과, 나중에 재시도");
+}
+
+// pLimit과 조합 — 동시성(concurrency) + 시간당 호출 수(rate) 동시 제어
+const concurrency = pLimit(5);
+const rate2 = createRateLimiter({ limit: 20, window: 1000 });
+
+await Promise.all(ids.map(id =>
+  concurrency(() => rate2.acquire().then(() => fetchUser(id)))
+));
+
+// 상태 확인
+console.log(rate.tokens);   // 현재 사용 가능한 토큰 수
+console.log(rate.waiting);  // 큐에서 대기 중인 요청 수
+
+// 버킷 즉시 초기화 (토큰 가득 채우고 대기 큐 즉시 드레인)
+rate.reset();
 ```
 
 ```ts

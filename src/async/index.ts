@@ -15,3 +15,5 @@ export { poll, PollTimeoutError } from "./poll";
 export type { PollOptions } from "./poll";
 export { pLimit } from "./pLimit";
 export type { Limiter } from "./pLimit";
+export { createRateLimiter } from "./rateLimit";
+export type { RateLimiter, RateLimiterOptions } from "./rateLimit";
