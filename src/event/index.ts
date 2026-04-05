@@ -7,3 +7,5 @@ export { createObservable, of, merge, createSubject, Observable } from "./observ
 export type { Observer, Subscription } from "./observable";
 export { createEventBus } from "./eventBus";
 export type { EventBus, EventBusOptions, EventRecord, WaitForOptions } from "./eventBus";
+export { signal, signalComputed, effect, untracked } from "./signal";
+export type { ReadonlySignal, Signal, EffectDisposer } from "./signal";
