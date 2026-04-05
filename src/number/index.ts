@@ -12,3 +12,10 @@ export { createTimeSeries } from "./timeSeries";
 export type { TimeSeries, TimeSeriesOptions } from "./timeSeries";
 export { createRateMeter } from "./rateMeter";
 export type { RateMeter, RateMeterOptions } from "./rateMeter";
+export {
+  gcd, lcm, gcdAll, lcmAll,
+  isPrime, primesUpTo,
+  factorial, combinations, permutations,
+  fibonacci, modPow,
+  isPowerOfTwo, nextPowerOfTwo, isCoprime,
+} from "./math.advanced";
