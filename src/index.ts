@@ -1,5 +1,6 @@
 export * from "./array";
 export * from "./color";
+export * from "./env";
 export * from "./id";
 export * from "./async";
 export * from "./cache";

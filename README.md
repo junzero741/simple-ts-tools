@@ -2380,6 +2380,61 @@ desaturate("#ff6600", 0.5)  // 더 회색빛으로
 
 ---
 
+### env
+
+Node.js 환경변수를 스키마 기반으로 파싱·검증하는 유틸리티. 타입 추론이 완전하게 동작하며, 누락된 필수 변수는 앱 시작 시 즉시 throw (fail fast).
+
+| 함수 | 시그니처 | 설명 |
+|------|----------|------|
+| `parseEnv` | `parseEnv<S>(schema, source?): InferEnv<S>` | 스키마에 따라 환경변수 파싱·검증. `source` 미지정 시 `process.env` 사용 |
+
+**지원 타입**
+
+| `type` | 변환 | 비고 |
+|--------|------|------|
+| `"string"` | 그대로 | — |
+| `"number"` | `Number()` | `min` / `max` 범위 검사 가능 |
+| `"boolean"` | `true`/`false` | `"true"/"1"/"yes"/"on"` → true, `"false"/"0"/"no"/"off"` → false |
+| `"enum"` | 허용 목록 검사 | `values: [...] as const` 으로 유니온 타입 추론 |
+
+**옵션**: `default` 지정 → 항상 해당 타입 / `optional: true` → `Type | undefined` / 둘 다 없음 → required (없으면 throw)
+
+```ts
+import { parseEnv } from "simple-ts-tools";
+
+const env = parseEnv({
+  PORT:         { type: "number",  default: 3000 },
+  DATABASE_URL: { type: "string" },                    // required — 없으면 즉시 throw
+  DEBUG:        { type: "boolean", default: false },
+  LOG_LEVEL: {
+    type: "enum",
+    values: ["debug", "info", "warn", "error"] as const,
+    default: "info",
+  },
+  REDIS_URL:    { type: "string", optional: true },    // string | undefined
+});
+
+// 타입 추론:
+// env.PORT         → number
+// env.DATABASE_URL → string
+// env.DEBUG        → boolean
+// env.LOG_LEVEL    → "debug" | "info" | "warn" | "error"
+// env.REDIS_URL    → string | undefined
+
+// 범위 검사
+parseEnv({ PORT: { type: "number", min: 1024, max: 65535 } });
+
+// 여러 필드 오류는 한 번에 보고
+// Error: Environment variable validation failed:
+//   • PORT: required but not set
+//   • DATABASE_URL: required but not set
+
+// 테스트에서 source 직접 주입 (process.env 불필요)
+const testEnv = parseEnv(schema, { DATABASE_URL: "postgres://localhost/test", PORT: "5432" });
+```
+
+---
+
 ### id
 
 암호학적으로 안전한 랜덤 ID 생성. `Math.random()` 기반 구현의 편향·충돌 위험 없이 `crypto.getRandomValues()`를 사용한다. 브라우저, Node.js(v15+), Edge Runtime 모두 지원.
