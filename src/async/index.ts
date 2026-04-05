@@ -64,3 +64,5 @@ export { createHealthCheck } from "./healthCheck";
 export type { HealthCheck, HealthReport, CheckResult, CheckOptions } from "./healthCheck";
 export { createCircuitBreakerGroup } from "./circuitBreakerGroup";
 export type { CircuitBreakerGroup, BreakerOptions, BreakerStats } from "./circuitBreakerGroup";
+export { createGracefulShutdown } from "./gracefulShutdown";
+export type { GracefulShutdown, ShutdownReport, ShutdownOptions } from "./gracefulShutdown";
