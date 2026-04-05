@@ -14,6 +14,7 @@ export * from "./event";
 export * from "./function";
 export * from "./http";
 export * from "./language";
+export * from "./logger";
 export * from "./number";
 export * from "./object";
 export * from "./phone";

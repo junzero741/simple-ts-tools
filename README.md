@@ -2713,6 +2713,69 @@ createId({ length: 6, alphabet: "0123456789" })    // "847392"
 createUUID()  // "550e8400-e29b-41d4-a716-446655440000"
 ```
 
+### logger
+
+| 함수 | 시그니처 | 설명 |
+|------|----------|------|
+| `createLogger` | `createLogger(options?): Logger` | 구조화된 로거 생성 — 레벨 필터링, 컨텍스트 병합, child 로거, 복수 트랜스포트 지원 |
+| `consoleTransport` | `consoleTransport(options?): Transport` | 사람이 읽기 쉬운 콘솔 출력 트랜스포트 (ANSI 컬러 옵션) |
+| `jsonTransport` | `jsonTransport(): Transport` | JSON Lines 형식으로 출력하는 트랜스포트 (로그 수집기 연동용) |
+
+**LoggerOptions**
+
+| 옵션 | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `level` | `LogLevel` | `"info"` | 최소 출력 레벨 (`"debug"` < `"info"` < `"warn"` < `"error"` < `"silent"`) |
+| `namespace` | `string` | — | 로거 네임스페이스. child() 시 `parent:child` 형태로 합쳐짐 |
+| `transports` | `Transport[]` | `[consoleTransport()]` | 로그 엔트리를 수신할 트랜스포트 함수 배열 |
+| `context` | `Record<string, unknown>` | — | 모든 로그 엔트리에 자동으로 병합될 기본 컨텍스트 |
+
+**Logger 인터페이스**
+
+| 메서드 | 설명 |
+|--------|------|
+| `debug / info / warn / error(message, context?, error?)` | 각 레벨로 로그 출력 |
+| `child(context, namespace?)` | 컨텍스트를 상속하는 자식 로거 반환 |
+| `level` | 현재 레벨 조회 |
+| `setLevel(level)` | 레벨 동적 변경 |
+
+```ts
+import { createLogger, consoleTransport, jsonTransport } from "simple-ts-tools";
+
+// 기본 사용 — info 이상 출력
+const log = createLogger({ level: "info" });
+log.info("서버 시작", { port: 3000 });
+log.error("DB 연결 실패", { host: "localhost" }, new Error("ECONNREFUSED"));
+
+// 자식 로거 — 요청별 컨텍스트 분리
+const reqLog = log.child({ requestId: "abc-123", userId: 42 });
+reqLog.info("요청 처리 시작");  // requestId, userId 자동 포함
+
+// 네임스페이스 계층 (app → app:db)
+const appLog = createLogger({ namespace: "app" });
+const dbLog = appLog.child({}, "db");
+dbLog.warn("slow query", { duration: 450 }); // [app:db] slow query {"duration":450}
+
+// 프로덕션 — JSON Lines로 출력 (Logstash, Fluentd, CloudWatch 등과 연동)
+const prodLog = createLogger({
+  level: "info",
+  context: { service: "my-api", version: "1.2.0" },
+  transports: [jsonTransport()],
+});
+
+// 개발 — 컬러 콘솔 + 원격 전송 복합 사용
+const devLog = createLogger({
+  level: "debug",
+  transports: [
+    consoleTransport({ colorize: true }),
+    (entry) => sendToRemote(entry),  // 커스텀 트랜스포트
+  ],
+});
+
+// 동적 레벨 변경 (런타임 디버그 활성화)
+log.setLevel("debug");
+```
+
 ---
 
 ## 개발
