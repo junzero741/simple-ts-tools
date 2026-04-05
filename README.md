@@ -1649,6 +1649,7 @@ formatDuration(3_000, { parts: 1 });    // "3초"
 | 클래스 | 설명 |
 |--------|------|
 | `LRUCache<K, V>` | 용량 제한 캐시. 초과 시 가장 오래 전에 사용된 항목 자동 제거 |
+| `TTLMap<K, V>` | TTL 기반 Map. 항목별 만료 시간 설정, 자동 만료. Rate limit·중복 방지·Negative 캐시에 적합 |
 
 | 메서드 / 프로퍼티 | 설명 |
 |--------|------|
@@ -1686,6 +1687,61 @@ cache.get("a");       // "a"가 최근 사용으로 갱신
 cache.set("c", 3);    // 용량 초과 → "b"(가장 오래됨)가 제거
 cache.has("b");       // false
 cache.has("a");       // true
+```
+
+**TTLMap** — 시간 기반 만료 Map (LRUCache는 개수 기반 제거, TTLMap은 시간 기반 만료)
+
+| 메서드 / 프로퍼티 | 설명 |
+|--------|------|
+| `new TTLMap(defaultTtl)` | 기본 TTL(ms) 지정 |
+| `.set(key, value, { ttl? })` | 값 저장. `ttl` 지정 시 이 항목에만 개별 TTL 적용. 체이닝 가능 |
+| `.get(key)` | 값 반환. 만료됐으면 `undefined` 반환 후 항목 삭제 |
+| `.has(key)` | 유효한 항목이 있으면 `true`. 만료됐으면 `false` 후 삭제 |
+| `.delete(key)` | 항목 제거, 성공 여부 반환 |
+| `.clear()` | 전체 비우기 |
+| `.cleanup()` | 만료된 항목 일괄 제거. 제거된 항목 수 반환 |
+| `.ttl(key)` | 특정 키의 남은 TTL(ms). 없거나 만료됐으면 0 |
+| `.size` | 현재 저장된 항목 수 (만료됐지만 cleanup 전 항목 포함) |
+
+```ts
+import { TTLMap } from "simple-ts-tools";
+
+// 중복 이벤트 방지 — 같은 이벤트 ID는 1분간 무시
+const processed = new TTLMap<string, true>(60_000);
+
+function handleEvent(id: string) {
+  if (processed.has(id)) return; // 이미 처리됨
+  processed.set(id, true);
+  // ... 처리
+}
+
+// Rate limiting — 사용자별 1분에 최대 100회
+const requestCounts = new TTLMap<string, number>(60_000);
+
+function isRateLimited(userId: string): boolean {
+  const count = requestCounts.get(userId) ?? 0;
+  if (count >= 100) return true;
+  requestCounts.set(userId, count + 1);
+  return false;
+}
+
+// Negative 캐시 — 404 응답을 30초간 캐시해 재요청 차단
+const notFound = new TTLMap<string, true>(30_000);
+
+async function fetchResource(url: string) {
+  if (notFound.has(url)) throw new Error("Not Found (cached)");
+  const res = await fetch(url);
+  if (res.status === 404) notFound.set(url, true);
+  return res;
+}
+
+// 항목별 TTL — 중요도에 따라 다른 만료 시간
+const tokenCache = new TTLMap<string, string>(15 * 60_000); // 기본 15분
+tokenCache.set("access-token", token, { ttl: 5 * 60_000 });   // 5분
+tokenCache.set("refresh-token", refresh, { ttl: 7 * 24 * 60 * 60_000 }); // 7일
+
+// 장시간 실행 서버에서 주기적 정리
+setInterval(() => tokenCache.cleanup(), 60_000);
 ```
 
 ---
