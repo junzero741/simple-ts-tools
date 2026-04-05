@@ -28,3 +28,5 @@ export type {
   CircuitState,
   StateChangeEvent,
 } from "./circuitBreaker";
+export { createPool } from "./pool";
+export type { Pool, PoolOptions, PoolStats } from "./pool";
