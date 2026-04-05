@@ -2327,6 +2327,59 @@ function createPost(body: unknown) {
 }
 ```
 
+### color
+
+HEX ↔ RGB ↔ HSL 변환, 밝기·채도·투명도 조작, 색상 혼합. 별도 의존성 없이 UI 프로젝트에서 가장 자주 쓰는 색상 유틸리티를 제공한다.
+`#RGB`, `#RRGGBB`, `#RGBA`, `#RRGGBBAA` 형식을 모두 지원한다.
+
+| 함수 | 시그니처 | 설명 |
+|------|----------|------|
+| `hexToRgb` | `hexToRgb(hex): { r, g, b, a }` | HEX → RGB(A) 객체 |
+| `rgbToHex` | `rgbToHex(r, g, b, a?): string` | RGB(A) → HEX 문자열 (alpha < 1이면 8자리) |
+| `hexToHsl` | `hexToHsl(hex): { h, s, l, a }` | HEX → HSL(A) 객체 (h: 0–360, s/l: 0–100) |
+| `hslToHex` | `hslToHex(h, s, l, a?): string` | HSL(A) → HEX 문자열 |
+| `lighten` | `lighten(hex, amount): string` | lightness +amount×100%p (0–1) |
+| `darken` | `darken(hex, amount): string` | lightness -amount×100%p (0–1) |
+| `saturate` | `saturate(hex, amount): string` | saturation +amount×100%p |
+| `desaturate` | `desaturate(hex, amount): string` | saturation -amount×100%p |
+| `setAlpha` | `setAlpha(hex, opacity): string` | 투명도 설정 (0–1) |
+| `mix` | `mix(hex1, hex2, weight?): string` | 두 색 혼합 (weight=0→hex1, 1→hex2, 기본 0.5) |
+| `complement` | `complement(hex): string` | 보색 (hue + 180°) |
+| `isLight` | `isLight(hex): boolean` | W3C WCAG 휘도 기준 밝은 색 판별 |
+
+```ts
+import { hexToRgb, lighten, darken, mix, isLight, setAlpha, complement } from "simple-ts-tools";
+
+// 변환
+hexToRgb("#ff6600")          // { r: 255, g: 102, b: 0, a: 1 }
+hexToRgb("#f60")             // { r: 255, g: 102, b: 0, a: 1 }
+rgbToHex(255, 102, 0, 0.5)  // "#ff660080"
+
+// 밝기 조절 — 디자인 시스템 색상 변형
+lighten("#336699", 0.2)      // lightness +20%p
+darken("#336699", 0.2)       // lightness -20%p
+
+// 투명도
+setAlpha("#ff6600", 0.5)     // "#ff660080"
+setAlpha("#ff660080", 1)     // "#ff6600"   (alpha 제거)
+
+// 혼합
+mix("#ff0000", "#0000ff")         // "#800080" (보라, 50:50)
+mix("#ff0000", "#0000ff", 0.25)  // 빨강 75% + 파랑 25%
+
+// 접근성 — 배경색에 맞는 텍스트 색 자동 선택
+const textColor = isLight(bgHex) ? "#000000" : "#ffffff";
+
+// 보색
+complement("#ff6600")        // "#0099ff"
+
+// 채도
+saturate("#7f9f7f", 0.5)    // 더 선명하게
+desaturate("#ff6600", 0.5)  // 더 회색빛으로
+```
+
+---
+
 ### id
 
 암호학적으로 안전한 랜덤 ID 생성. `Math.random()` 기반 구현의 편향·충돌 위험 없이 `crypto.getRandomValues()`를 사용한다. 브라우저, Node.js(v15+), Edge Runtime 모두 지원.
