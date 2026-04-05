@@ -596,6 +596,7 @@ formatPhoneNumber("0212345678");  // "02-123-4567" (8자리 지역번호 형식)
 | `capitalize` | `capitalize(str: string): string` | 첫 글자 대문자, 나머지 소문자 |
 | `escapeHtml` | `escapeHtml(str: string): string` | HTML 특수 문자를 엔티티로 변환 (`& < > " '`) |
 | `formatBytes` | `formatBytes(bytes: number, decimals?: number): string` | 바이트 수를 사람이 읽기 좋은 단위로 변환 (B/KB/MB/GB/TB) |
+| `template` | `template(str: string, data: Record<string, ...>): string` | `{{변수명}}` 자리 표시자를 데이터로 치환 |
 | `unescapeHtml` | `unescapeHtml(str: string): string` | HTML 엔티티를 원래 문자로 복원 |
 | `isEmpty` | `isEmpty(value: string \| null \| undefined): boolean` | 빈 문자열·공백·null·undefined이면 true |
 | `kebabToCamel` | `kebabToCamel(str: string): string` | kebab-case → camelCase |
@@ -648,6 +649,20 @@ unescapeHtml('&lt;b&gt;hello&lt;/b&gt;'); // '<b>hello</b>'
 // 왕복 무손실
 const raw = '<b>Alice & "Bob"</b>';
 unescapeHtml(escapeHtml(raw)) === raw; // true
+
+// 문자열 템플릿 — {{변수명}} 치환
+template("안녕하세요, {{name}}님!", { name: "Alice" });
+// "안녕하세요, Alice님!"
+
+template("{{sender}}님이 {{count}}개의 메시지를 보냈습니다.", { sender: "Bob", count: 3 });
+// "Bob님이 3개의 메시지를 보냈습니다."
+
+template("{{year}}년 {{month}}월 {{day}}일", { year: 2024, month: 6, day: 7 });
+// "2024년 6월 7일"
+
+// 정의되지 않은 변수는 빈 문자열
+template("Hello, {{name}}{{title}}!", { name: "Alice" });
+// "Hello, Alice!"
 ```
 
 ---
@@ -815,6 +830,91 @@ cache.get("a");       // "a"가 최근 사용으로 갱신
 cache.set("c", 3);    // 용량 초과 → "b"(가장 오래됨)가 제거
 cache.has("b");       // false
 cache.has("a");       // true
+```
+
+---
+
+### structure
+
+| 클래스 | 설명 |
+|--------|------|
+| `Queue<T>` | FIFO 큐. dequeue O(1) (head 포인터 방식) |
+| `Stack<T>` | LIFO 스택. 모든 연산 O(1) |
+
+| 메서드 / 프로퍼티 | Queue | Stack | 설명 |
+|--------|-------|-------|------|
+| `enqueue(item)` / `push(item)` | ✓ | ✓ | 요소 추가, 체이닝 가능 |
+| `dequeue()` / `pop()` | ✓ | ✓ | 요소 꺼내기 (없으면 `undefined`) |
+| `peek()` | ✓ | ✓ | 제거 없이 다음 요소 확인 |
+| `.isEmpty` | ✓ | ✓ | 비어 있는지 확인 |
+| `.size` | ✓ | ✓ | 현재 요소 수 |
+| `clear()` | ✓ | ✓ | 전체 비우기 |
+| `toArray()` | ✓ | ✓ | 배열로 변환 |
+
+```ts
+import { Queue, Stack } from "simple-ts-tools";
+
+// BFS 직접 구현
+const queue = new Queue<TreeNode>([root]);
+while (!queue.isEmpty) {
+  const node = queue.dequeue()!;
+  process(node);
+  node.children.forEach(c => queue.enqueue(c));
+}
+
+// 히스토리 / undo 스택
+const history = new Stack<State>();
+history.push(currentState);
+const prev = history.pop(); // undo
+
+// 괄호 유효성 검사
+function isBalanced(s: string) {
+  const stack = new Stack<string>();
+  for (const ch of s) {
+    if ("({[".includes(ch)) stack.push(ch);
+    else if (")}]".includes(ch) && stack.pop() !== { ")":"(", "}":"{", "]":"[" }[ch])
+      return false;
+  }
+  return stack.isEmpty;
+}
+```
+
+---
+
+### url
+
+| 함수 | 시그니처 | 설명 |
+|------|----------|------|
+| `parseQueryString` | `parseQueryString(query: string): Record<string, string \| string[]>` | 쿼리 문자열 → 객체 (중복 키는 배열) |
+| `buildQueryString` | `buildQueryString(params: QueryParams): string` | 객체 → 쿼리 문자열 (null/undefined 제외) |
+
+```ts
+import { parseQueryString, buildQueryString } from "simple-ts-tools";
+
+// 파싱 — 앞의 ? 유무 무관
+parseQueryString("?page=1&sort=name");
+// { page: "1", sort: "name" }
+
+parseQueryString("tags=a&tags=b&tags=c");
+// { tags: ["a", "b", "c"] }  — 중복 키는 자동으로 배열
+
+parseQueryString("q=hello%20world");
+// { q: "hello world" }  — URL 디코딩 자동
+
+// 직렬화 — null/undefined 자동 제외
+buildQueryString({ page: 1, sort: "name" });
+// "page=1&sort=name"
+
+buildQueryString({ tags: ["a", "b", "c"] });
+// "tags=a&tags=b&tags=c"
+
+buildQueryString({ page: 1, filter: null, sort: undefined });
+// "page=1"  — null/undefined 제외
+
+// 활용: 현재 URL에 파라미터 추가/수정
+const current = parseQueryString(location.search);
+const updated = buildQueryString({ ...current, page: 2 });
+router.push(`/list?${updated}`);
 ```
 
 ---
