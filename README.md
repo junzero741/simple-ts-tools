@@ -737,10 +737,32 @@ try {
 
 ### event
 
-| 클래스 | 설명 |
-|--------|------|
-| `BehaviorSubject<T>` | 현재 값을 보유하며 변경 시 구독자에게 알리는 반응형 상태 홀더 |
+| 클래스/함수 | 설명 |
+|-------------|------|
+| `createStore<T>` | 구조화된 객체 상태 + selector 구독 (슬라이스가 바뀔 때만 알림) |
+| `BehaviorSubject<T>` | 단일 값을 보유하며 변경 시 구독자에게 알리는 반응형 상태 홀더 |
 | `TypedEventEmitter<TEvents>` | 이벤트 이름과 페이로드 타입이 컴파일 타임에 검증되는 pub/sub |
+
+**createStore vs BehaviorSubject**
+
+| | `createStore` | `BehaviorSubject` |
+|-|---|---|
+| 상태 형태 | 구조화된 객체 (여러 키) | 단일 값 |
+| 부분 업데이트 | `set(partial)` 병합 | `update(fn)` 전체 교체 |
+| 슬라이스 구독 | `select(fn)` — 해당 슬라이스만 변경 시 호출 | 없음 (전체 값 변경 시 항상 호출) |
+| 동등 비교 | 각 키별 `Object.is` | `Object.is` (전체 값) |
+
+**Store 메서드**
+
+| 메서드 | 설명 |
+|--------|------|
+| `get()` | 현재 상태 동기 반환 |
+| `set(partial)` | Partial 병합. 변경된 키가 없으면 구독자 호출 안 함 |
+| `replace(state)` | 전체 교체 |
+| `update(fn)` | `fn(state)` 반환값을 병합 |
+| `subscribe(listener)` | 전체 상태 구독. 즉시 현재 상태 전달. 해제 함수 반환 |
+| `select(selector, options?)` | 파생 뷰 반환. selector 값이 바뀔 때만 listener 호출 |
+| `reset()` | 초기 상태로 복원 |
 
 | 메서드 | 설명 |
 |--------|------|
@@ -763,6 +785,48 @@ try {
 | `.subscribe(handler)` | 구독 등록 (즉시 현재 값 전달), 해제 함수 반환 |
 | `.complete()` | 완료 처리, 이후 set/update 무시 |
 | `.subscriberCount` | 현재 구독자 수 |
+
+```ts
+import { createStore } from "simple-ts-tools";
+
+interface AppState {
+  user: { name: string; role: "admin" | "user" } | null;
+  theme: "light" | "dark";
+  notifications: number;
+}
+
+const store = createStore<AppState>({
+  user: null,
+  theme: "light",
+  notifications: 0,
+});
+
+// 부분 업데이트 — 나머지 키는 유지
+store.set({ theme: "dark" });
+store.update(s => ({ notifications: s.notifications + 1 }));
+
+// 전체 상태 구독
+const unsub = store.subscribe(state => console.log(state));
+
+// selector — notifications가 바뀔 때만 호출 (theme 변경 시 호출 안 됨)
+const badge = store.select(s => s.notifications);
+badge.subscribe(count => updateBadge(count));
+badge.get(); // 현재 값 동기 조회
+
+// 파생 계산 — isAdmin은 user.role이 "admin"일 때만 true
+const isAdmin = store.select(s => s.user?.role === "admin");
+
+// 커스텀 equals — 객체 슬라이스를 값으로 비교
+const userSlice = store.select(s => s.user, {
+  equals: (a, b) => a?.name === b?.name && a?.role === b?.role,
+});
+
+// 인증 상태 관리
+store.set({ user: { name: "Alice", role: "admin" }, notifications: 0 });
+store.set({ user: null }); // 로그아웃
+
+store.reset(); // 초기 상태 복원
+```
 
 ```ts
 import { BehaviorSubject } from "simple-ts-tools";
