@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { addDays, diffDays, endOfDay, isSameDay, startOfDay, subDays } from "./dateUtils";
+import {
+  addDays,
+  addMonths,
+  addYears,
+  diffDays,
+  endOfDay,
+  isSameDay,
+  isWeekday,
+  isWeekend,
+  startOfDay,
+  subDays,
+} from "./dateUtils";
 
 const d = new Date("2024-06-07T14:30:00.000Z");
 
@@ -125,5 +136,78 @@ describe("diffDays", () => {
 
   it("월을 넘어가는 차이를 계산한다", () => {
     expect(diffDays(new Date("2024-01-31"), new Date("2024-03-01"))).toBe(30);
+  });
+});
+
+describe("addMonths", () => {
+  it("n개월을 더한 날짜를 반환한다", () => {
+    const result = addMonths(new Date("2024-03-15"), 2);
+    expect(result.getFullYear()).toBe(2024);
+    expect(result.getMonth()).toBe(4); // 5월 (0-indexed)
+    expect(result.getDate()).toBe(15);
+  });
+
+  it("연도를 넘어가도 처리한다", () => {
+    const result = addMonths(new Date("2024-11-15"), 3);
+    expect(result.getFullYear()).toBe(2025);
+    expect(result.getMonth()).toBe(1); // 2월
+  });
+
+  it("월말 날짜는 대상 월의 마지막 날로 clamp한다", () => {
+    // 1월 31일 + 1개월 → 2월 마지막 날
+    const result = addMonths(new Date("2024-01-31"), 1);
+    expect(result.getMonth()).toBe(1); // 2월
+    expect(result.getDate()).toBe(29); // 2024년은 윤년
+  });
+
+  it("음수 개월로 뺄 수 있다", () => {
+    const result = addMonths(new Date("2024-06-15"), -3);
+    expect(result.getMonth()).toBe(2); // 3월
+    expect(result.getDate()).toBe(15);
+  });
+
+  it("원본 날짜를 변경하지 않는다", () => {
+    const original = new Date("2024-06-07");
+    addMonths(original, 2);
+    expect(original.getMonth()).toBe(5); // 6월 유지
+  });
+});
+
+describe("addYears", () => {
+  it("n년을 더한 날짜를 반환한다", () => {
+    const result = addYears(new Date("2024-06-07"), 2);
+    expect(result.getFullYear()).toBe(2026);
+    expect(result.getMonth()).toBe(5);
+    expect(result.getDate()).toBe(7);
+  });
+
+  it("윤년 2월 29일 + 1년 → 2월 28일", () => {
+    const result = addYears(new Date("2024-02-29"), 1);
+    expect(result.getFullYear()).toBe(2025);
+    expect(result.getMonth()).toBe(1);
+    expect(result.getDate()).toBe(28);
+  });
+
+  it("음수로 뺄 수 있다", () => {
+    const result = addYears(new Date("2024-06-07"), -3);
+    expect(result.getFullYear()).toBe(2021);
+  });
+});
+
+describe("isWeekend / isWeekday", () => {
+  it("토요일은 주말로 판별한다", () => {
+    expect(isWeekend(new Date("2024-06-08"))).toBe(true); // 토
+    expect(isWeekday(new Date("2024-06-08"))).toBe(false);
+  });
+
+  it("일요일은 주말로 판별한다", () => {
+    expect(isWeekend(new Date("2024-06-09"))).toBe(true); // 일
+    expect(isWeekday(new Date("2024-06-09"))).toBe(false);
+  });
+
+  it("평일은 isWeekday가 true를 반환한다", () => {
+    expect(isWeekday(new Date("2024-06-07"))).toBe(true);  // 금
+    expect(isWeekday(new Date("2024-06-03"))).toBe(true);  // 월
+    expect(isWeekend(new Date("2024-06-07"))).toBe(false);
   });
 });

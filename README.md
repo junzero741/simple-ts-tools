@@ -377,7 +377,15 @@ const data = await new RequestBuilder()
 |------|----------|------|
 | `isAlphabet` | `isAlphabet(char: string): boolean` | 단일 문자가 알파벳인지 확인 |
 | `isAlphanumeric` | `isAlphanumeric(str: string): boolean` | 문자열이 영문자·숫자로만 구성됐는지 확인 |
+| `isArray` | `isArray(value: unknown): value is unknown[]` | 배열 여부 확인 |
+| `isBoolean` | `isBoolean(value: unknown): value is boolean` | boolean 여부 확인 |
+| `isDefined` | `isDefined<T>(value: T): value is NonNullable<T>` | null/undefined가 아닌지 확인 — 타입을 NonNullable로 좁힘 |
 | `isEmail` | `isEmail(value: string): boolean` | 이메일 형식 검증 |
+| `isFunction` | `isFunction(value: unknown): value is Function` | 함수 여부 확인 |
+| `isNil` | `isNil(value: unknown): value is null \| undefined` | null 또는 undefined 여부 확인 |
+| `isNumber` | `isNumber(value: unknown): value is number` | number 여부 확인 (NaN은 false) |
+| `isObject` | `isObject(value: unknown): value is Record<string, unknown>` | plain 객체 여부 (null·Array·Date 등은 false) |
+| `isString` | `isString(value: unknown): value is string` | string 여부 확인 |
 | `isUrl` | `isUrl(value: string, allowedProtocols?: string[]): boolean` | URL 형식 검증 (기본: http/https만 허용) |
 
 ```ts
@@ -396,6 +404,27 @@ isUrl("ftp://files.example.com", ["ftp:"]); // true
 
 // XSS 방지 — javascript: URL 차단
 isUrl("javascript:alert(1)");     // false
+
+// 타입 가드 — 런타임 타입 좁히기
+isNil(null);        // true
+isNil(0);           // false
+isDefined("hello"); // true
+
+// filter와 조합 시 반환 타입이 자동으로 좁혀짐
+const values: (string | null | undefined)[] = ["a", null, "b", undefined];
+const strings = values.filter(isDefined); // string[]
+
+// 런타임 타입 분기
+function process(value: unknown) {
+  if (isString(value)) return value.toUpperCase();  // string으로 좁혀짐
+  if (isNumber(value)) return value.toFixed(2);     // number로 좁혀짐
+  if (isArray(value))  return value.length;
+  if (isObject(value)) return Object.keys(value).length;
+}
+
+isNumber(NaN);        // false — NaN 방어
+isObject([]);         // false — Array는 plain 객체가 아님
+isObject(new Date()); // false — 인스턴스는 제외
 ```
 
 ---
@@ -593,7 +622,9 @@ formatPhoneNumber("0212345678");  // "02-123-4567" (8자리 지역번호 형식)
 | 함수 | 시그니처 | 설명 |
 |------|----------|------|
 | `camelToKebab` | `camelToKebab(str: string): string` | camelCase/PascalCase → kebab-case (약어 처리 포함) |
+| `camelToSnake` | `camelToSnake(str: string): string` | camelCase/PascalCase → snake_case (약어 처리 포함) |
 | `capitalize` | `capitalize(str: string): string` | 첫 글자 대문자, 나머지 소문자 |
+| `snakeToCamel` | `snakeToCamel(str: string): string` | snake_case → camelCase |
 | `escapeHtml` | `escapeHtml(str: string): string` | HTML 특수 문자를 엔티티로 변환 (`& < > " '`) |
 | `formatBytes` | `formatBytes(bytes: number, decimals?: number): string` | 바이트 수를 사람이 읽기 좋은 단위로 변환 (B/KB/MB/GB/TB) |
 | `template` | `template(str: string, data: Record<string, ...>): string` | `{{변수명}}` 자리 표시자를 데이터로 치환 |
@@ -624,6 +655,13 @@ camelToKebab("XMLParser");           // "xml-parser"     ← 약어 처리
 camelToKebab("getHTTPSResponse");    // "get-https-response"
 kebabToCamel("background-color");    // "backgroundColor"
 kebabToCamel(camelToKebab("myProp")); // "myProp" (왕복 가능)
+
+// snake_case 변환 (DB 컬럼명 ↔ JS 프로퍼티 변환)
+camelToSnake("backgroundColor");    // "background_color"
+camelToSnake("XMLParser");           // "xml_parser"      ← 약어 처리
+camelToSnake("getHTTPSResponse");    // "get_https_response"
+snakeToCamel("background_color");    // "backgroundColor"
+snakeToCamel(camelToSnake("myProp")); // "myProp" (왕복 가능)
 
 // 파일 크기를 사람이 읽기 좋은 단위로 표시
 formatBytes(0);               // "0 B"
@@ -708,10 +746,14 @@ dfs(tree);  // [4, 5, 2, 3, 1]
 | 함수 | 시그니처 | 설명 |
 |------|----------|------|
 | `addDays` | `addDays(date: Date, days: number): Date` | n일을 더한 새 Date 반환 |
+| `addMonths` | `addMonths(date: Date, months: number): Date` | n개월을 더한 새 Date (월말 자동 clamp) |
+| `addYears` | `addYears(date: Date, years: number): Date` | n년을 더한 새 Date |
 | `subDays` | `subDays(date: Date, days: number): Date` | n일을 뺀 새 Date 반환 |
 | `startOfDay` | `startOfDay(date: Date): Date` | 하루의 시작 시각 (00:00:00.000) |
 | `endOfDay` | `endOfDay(date: Date): Date` | 하루의 마지막 시각 (23:59:59.999) |
 | `isSameDay` | `isSameDay(a: Date, b: Date): boolean` | 같은 날(연·월·일)인지 확인 (시각 무시) |
+| `isWeekend` | `isWeekend(date: Date): boolean` | 토요일 또는 일요일인지 확인 |
+| `isWeekday` | `isWeekday(date: Date): boolean` | 월~금인지 확인 |
 | `diffDays` | `diffDays(a: Date, b: Date): number` | 두 날짜의 일수 차이 (절댓값) |
 | `formatDate` | `formatDate(date: Date, format: string): string` | 토큰 기반 날짜 포맷 변환 |
 | `formatRelativeTime` | `formatRelativeTime(date: Date, base?: Date, locale?: "ko"\|"en"): string` | 상대 시간 표시 ("3분 전", "2일 후") |
@@ -772,6 +814,16 @@ const thisWeekPosts = posts.filter(p => p.createdAt >= weekAgo);
 const start = startOfDay(selectedDate);
 const end = endOfDay(selectedDate);
 db.query({ createdAt: { gte: start, lte: end } });
+
+// 월/년 단위 조작 — 월말 날짜도 안전하게 처리
+addMonths(new Date("2024-01-31"), 1);  // 2024-02-29 (윤년 clamp)
+addMonths(new Date("2024-03-31"), -1); // 2024-02-29
+addYears(new Date("2024-02-29"), 1);   // 2025-02-28 (비윤년 clamp)
+
+// 주말/평일 필터링
+const workdays = dateRange.filter(isWeekday);
+const weekends = dateRange.filter(isWeekend);
+const nextBizDay = isWeekday(tomorrow) ? tomorrow : addDays(tomorrow, isWeekend(tomorrow) && tomorrow.getDay() === 6 ? 2 : 1);
 
 // 상대 시간 표시 (SNS 피드, 댓글, 알림)
 const now = new Date();

@@ -1,4 +1,5 @@
 export { camelToKebab } from "./camelToKebab";
+export { camelToSnake, snakeToCamel } from "./snakeCase";
 export { capitalize } from "./capitalize";
 export { escapeHtml, unescapeHtml } from "./escapeHtml";
 export { formatBytes } from "./formatBytes";
