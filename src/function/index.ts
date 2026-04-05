@@ -15,4 +15,6 @@ export { createMiddleware } from "./middleware";
 export { match } from "./match";
 export { lens, view, set, over, prop, composeLens } from "./lens";
 export type { Lens } from "./lens";
+export { createInjector } from "./injector";
+export type { Injector, Scope, FactoryOptions } from "./injector";
 export type { Middleware, MiddlewareFn } from "./middleware";
