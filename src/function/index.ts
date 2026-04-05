@@ -17,4 +17,6 @@ export { lens, view, set, over, prop, composeLens } from "./lens";
 export type { Lens } from "./lens";
 export { createInjector } from "./injector";
 export type { Injector, Scope, FactoryOptions } from "./injector";
+export { createFSM } from "./fsm";
+export type { FSM, FSMConfig, Transition, StateConfig } from "./fsm";
 export type { Middleware, MiddlewareFn } from "./middleware";
