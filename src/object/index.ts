@@ -20,3 +20,5 @@ export { deepFreeze } from "./deepFreeze";
 export type { DeepReadonly } from "./deepFreeze";
 export { createBuilder } from "./builder";
 export type { Builder } from "./builder";
+export { watchable } from "./watchable";
+export type { Watchable, WatchEvent, WatchHandler } from "./watchable";
